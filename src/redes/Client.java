@@ -7,21 +7,25 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.regex.Pattern;
 
 public class Client {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
 
         if (args.length < 2) {
             System.err.println(
-                    "Usage: java EchoClient <host name> <port number>");
+                    "Usage:   <ip> <port number> <message>");
             System.exit(1);
         }
 
-
-        InetAddress addr = InetAddress.getByName(args[0]);
-        int portNumber = Integer.parseInt(args[1]);
-        String str = args[2];
-        String md5 = args[0] + args[1] + args[2];
+        final String[] ip_port = args[0].split(Pattern.quote(":"));
+        InetAddress addr = InetAddress.getByName(ip_port[0]);
+        for (String s : ip_port) {
+            System.out.println(s);
+        }
+        int portNumber = Integer.parseInt(ip_port[1]);
+        String str = args[1];
+        String md5 = ip_port[0] + ip_port[1] + args[1];
         md5 = hash(md5);
 
         try (

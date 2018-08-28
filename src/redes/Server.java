@@ -8,7 +8,7 @@ public class Server {
     public static void main(String[] args) throws IOException {
 
         if (args.length < 1) {
-            System.err.println("Usage: java  <port number>");
+            System.err.println("Usage: <port number>");
             System.exit(1);
         }
 
