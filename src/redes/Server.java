@@ -26,18 +26,15 @@ public class Server {
 
             String inputLine, outputLine;
 
-            // Initiate conversation with client
 
-            /*while ((inputLine = in.readLine()) != null) {
-                out.println("eviado de volta:" +inputLine);
-                System.out.println("recebido:"+inputLine);
-                if (inputLine.equals("Bye."))
-                    break;
-            }*/
-
-            Message m = (Message)inputStream.readObject();
-            System.out.println("Size: " +m.getSize()+"\nMessage: "+m.getMsg() +"\nHash:"+m.getMd5());
-        } catch (IOException e) {
+            while(!clientSocket.isClosed()) {
+                Message m = (Message) inputStream.readObject();
+                System.out.println("Size: " + m.getSize() + "\nMessage: " + m.getMsg() + "\nHash:" + m.getMd5());
+            }
+        } catch (EOFException e) {
+            System.out.println("Todas as mensagens recebidas");
+        }
+        catch (IOException e) {
             System.out.println("Exceção ao dar listen na porta "
                     + portNumber);
             System.out.println(e.getMessage());

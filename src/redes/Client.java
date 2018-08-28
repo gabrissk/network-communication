@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Client {
@@ -18,15 +19,14 @@ public class Client {
             System.exit(1);
         }
 
-        final String[] ip_port = args[0].split(Pattern.quote(":"));
+
+        final String[] ip_port = args[1].split(Pattern.quote(":"));
         InetAddress addr = InetAddress.getByName(ip_port[0]);
         for (String s : ip_port) {
             System.out.println(s);
         }
+
         int portNumber = Integer.parseInt(ip_port[1]);
-        String str = args[1];
-        String md5 = ip_port[0] + ip_port[1] + args[1];
-        md5 = hash(md5);
 
         try (
                 Socket socket = new Socket(addr, portNumber);
@@ -38,22 +38,14 @@ public class Client {
                     new BufferedReader(new InputStreamReader(System.in));
             String fromServer;
             String fromUser;
-            Message m = new Message(str.length(), str, md5);
-            hash(md5);
 
-            out.writeObject(m);
+            Scanner scanner = new Scanner(new File(args[0]));
+            while (scanner.hasNextLine()) {
+                Message msg = setMessage(scanner.nextLine());
+                //System.out.println(scanner.nextLine());
+                out.writeObject(msg);
+            }
 
-            /*while ((fromServer = in.readLine()) != null) {
-                System.out.println("Server: " + fromServer);
-                if (fromServer.equals("Bye."))
-                    break;
-
-                fromUser = stdIn.readLine();
-                if (fromUser != null) {
-                    System.out.println("Client: " + fromUser);
-                    out.println(fromUser);
-                }
-            }*/
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host " + args[0]);
             System.exit(1);
@@ -64,14 +56,19 @@ public class Client {
         }
     }
 
+    private static Message setMessage(String nextLine) throws NoSuchAlgorithmException {
+        String md5 = hash(nextLine + String.valueOf(nextLine.length()));
+        return new Message((short)nextLine.length(), nextLine, md5);
+    }
+
 
     // Retorna o hash
-    public static String hash(String a) throws NoSuchAlgorithmException {
-        if(a == null || "".equals(a)) {
-            return a;
+    public static String hash(String str) throws NoSuchAlgorithmException {
+        if(str == null || "".equals(str)) {
+            return str;
         }
         MessageDigest message = MessageDigest.getInstance("MD5");
-        message.update(a.getBytes(),0,a.length());
+        message.update(str.getBytes(),0,str.length());
         return new BigInteger(1,message.digest()).toString(16);
     }
 
