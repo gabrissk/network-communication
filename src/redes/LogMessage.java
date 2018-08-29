@@ -25,4 +25,9 @@ public class LogMessage extends Message implements Serializable {
     public String getMd5() { return this.md5; }
 
     public long getSeq_num() { return seq_num; }
+
+    @Override
+    public String toString() {
+        return "Mensagem: " +msg+ "\tsize: " +size+ "\tmd5: " +md5+ "\tseqNum: " +seq_num;
+    }
 }

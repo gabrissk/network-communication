@@ -2,9 +2,7 @@ package redes;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.net.InetAddress;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
@@ -25,34 +23,48 @@ public class Client {
         int portNumber = Integer.parseInt(ip_port[1]);
         final double perror = Double.parseDouble(args[2]);
 
-        try (
+        // UDP
+
+        DatagramSocket clientSocket = new DatagramSocket();
+        byte[] sendData = new byte[1024];
+        byte[] receiveData = new byte[1024];
+
+
+        /*try (
                 Socket socket = new Socket(addr, portNumber);
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
-        ) {
-            BufferedReader stdIn =
+        ) {*/
+        BufferedReader stdIn =
                     new BufferedReader(new InputStreamReader(System.in));
-            String fromServer;
-            String fromUser;
+        String fromServer;
+        String fromUser;
 
-            long seq_num = 0;
-            Scanner scanner = new Scanner(new File(args[0]));
-            while (scanner.hasNextLine()) {
+        long seq_num = 0;
+        Scanner scanner = new Scanner(new File(args[0]));
+        while (scanner.hasNextLine()) {
+                ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+                ObjectOutput oo = new ObjectOutputStream(bStream);
                 LogMessage msg = setMessage(scanner.nextLine(), seq_num, perror);
                 //System.out.println(scanner.nextLine());
-                out.writeObject(msg);
+                //out.writeObject(msg);
+                oo.writeObject(msg);
+                byte[] send_serial = bStream.toByteArray();
+                DatagramPacket sendPacket = new DatagramPacket(send_serial,
+                        send_serial.length, addr, portNumber);
+                clientSocket.send(sendPacket);
                 seq_num++;
             }
-
-        } catch (UnknownHostException e) {
+        clientSocket.close();
+        /*} catch (UnknownHostException e) {
             System.err.println("Host desconhecido " + args[0]);
             System.exit(1);
         } catch (IOException e) {
             System.err.println("Nao conseguiu conectar a " +
                     args[0]);
             System.exit(1);
-        }
+        }*/
     }
 
     private static LogMessage setMessage(String nextLine, long seq_num, double perror) throws NoSuchAlgorithmException {

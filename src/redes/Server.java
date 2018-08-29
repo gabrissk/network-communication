@@ -1,12 +1,14 @@
 package redes;
 
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
 
 public class Server {
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
         if (args.length < 3) {
             System.err.println("Usage: <file> <port number> <Perror>");
@@ -17,7 +19,7 @@ public class Server {
 
         BufferedWriter outFile = null;
         try {
-            outFile = new BufferedWriter(new FileWriter(args[0], true));
+            outFile = new BufferedWriter(new FileWriter(args[0], false));
         }
         catch (IOException e)
         {
@@ -26,13 +28,28 @@ public class Server {
 
         int portNumber = Integer.parseInt(args[1]);
 
-        try (
+        // UDP
+        DatagramSocket socket = new DatagramSocket(portNumber);
+        byte[] receiveData = new byte[1024];
+        byte[] sendData = new byte[1024];
+
+        DatagramPacket receivePacket = new DatagramPacket(receiveData,
+                receiveData.length);
+        System.out.println("Esperando por datagrama UDP na porta " + portNumber);
+
+        while(true) {
+            socket.receive(receivePacket);
+            ObjectInputStream iStream = new ObjectInputStream(new ByteArrayInputStream(receivePacket.getData()));
+            LogMessage m = (LogMessage) iStream.readObject();
+            System.out.println(m.toString());
+        }
+        /*try (
                 ServerSocket serverSocket = new ServerSocket(portNumber);
                 Socket clientSocket = serverSocket.accept();
                 PrintWriter out =
                         new PrintWriter(clientSocket.getOutputStream(), true);
-                /*BufferedReader in = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()));*/
+                *//*BufferedReader in = new BufferedReader(
+                        new InputStreamReader(clientSocket.getInputStream()));*//*
                 ObjectInputStream inputStream = new ObjectInputStream(clientSocket.getInputStream());
         ) {
 
@@ -62,7 +79,7 @@ public class Server {
             System.out.println(e.getMessage());
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-        }
+        }*/
 
     }
 }
