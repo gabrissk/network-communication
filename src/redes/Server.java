@@ -44,7 +44,8 @@ public class Server {
             System.out.println(msg.toString());
 
             // Faz a verificacao de erro
-            if(!(Client.hash(msg.getSize()+ msg.getMsg()).equals(msg.getMd5()))) {
+            if(!(Client.hash(String.valueOf(msg.getSeq_num()) + String.valueOf(msg.getTime().getSecs()) +
+                    String.valueOf(msg.getTime().getNanos()) + String.valueOf((msg.getSize())) + msg.getMsg()).equals(msg.getMd5()))) {
                 System.out.println("Falha na verificacao! Descartar mensagem");
             }
             else {
