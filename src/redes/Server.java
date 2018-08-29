@@ -29,7 +29,8 @@ public class Server {
 
             while(!clientSocket.isClosed()) {
                 Message m = (Message) inputStream.readObject();
-                System.out.println("Size: " + m.getSize() + "\nMessage: " + m.getMsg() + "\nHash:" + m.getMd5());
+                System.out.println("Size: " + m.getSize() + "\tMessage: " + m.getMsg() +
+                        "\tHash:" + m.getMd5() +"\tCount: " +m.getSeq_num());
             }
         } catch (EOFException e) {
             System.out.println("Todas as mensagens recebidas");
