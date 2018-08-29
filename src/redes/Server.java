@@ -28,7 +28,7 @@ public class Server {
 
 
             while(!clientSocket.isClosed()) {
-                Message m = (Message) inputStream.readObject();
+                LogMessage m = (LogMessage) inputStream.readObject();
                 System.out.println("Size: " + m.getSize() + "\tMessage: " + m.getMsg() +
                         "\tHash:" + m.getMd5() +"\tCount: " +m.getSeq_num());
             }

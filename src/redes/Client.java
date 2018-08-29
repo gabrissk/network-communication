@@ -38,7 +38,7 @@ public class Client {
 
             Scanner scanner = new Scanner(new File(args[0]));
             while (scanner.hasNextLine()) {
-                Message msg = setMessage(scanner.nextLine(), perror);
+                LogMessage msg = setMessage(scanner.nextLine(), perror);
                 //System.out.println(scanner.nextLine());
                 out.writeObject(msg);
             }
@@ -53,7 +53,7 @@ public class Client {
         }
     }
 
-    private static Message setMessage(String nextLine, double perror) throws NoSuchAlgorithmException {
+    private static LogMessage setMessage(String nextLine, double perror) throws NoSuchAlgorithmException {
         String md5 = hash(nextLine + String.valueOf(nextLine.length()));
         System.out.println("antes " +md5);
         double rdm = Math.random();
@@ -61,7 +61,9 @@ public class Client {
             md5 = hash(md5);
             System.out.println("erro "+md5);
         }
-        return new Message((short)nextLine.length(), nextLine, md5);
+        LogMessage message =new LogMessage((short)nextLine.length(), nextLine, md5);
+        System.out.println("md5: "+message.getMd5());
+        return new LogMessage((short)nextLine.length(), nextLine, md5);
     }
 
 
