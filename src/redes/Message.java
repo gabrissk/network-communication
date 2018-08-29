@@ -3,7 +3,8 @@ package redes;
 import java.io.Serializable;
 
 public class Message implements Serializable {
-    public static long seq_num ;
+
+    private static long seq_num ;
     private short size;
     private String msg;
     private String md5;
