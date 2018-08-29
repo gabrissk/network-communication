@@ -62,6 +62,13 @@ public class Client {
                     args[0]);
             System.exit(1);
         }*/
+
+        // TODO: 29/08/18
+        // Ao final da execução, o cliente deve imprimir uma linha com o número de mensagens de log distintas,
+        // o número de mensagens de log transmitidas (incluindo retransmissões), o número de mensagens transmitidas com MD5 incorreto,
+        // e o tempo total de execução. Utilize um formato de impressão equivalente ao formato [%d %d %d %.3fs]
+        // da função [printf] da biblioteca padrão do C.
+
     }
 
     private static LogMessage setAndGetMessage(String nextLine, long seq_num, double perror, Timestamp time) throws NoSuchAlgorithmException {
@@ -77,7 +84,7 @@ public class Client {
 
 
     // Retorna o hash com algoritmo MD5
-    public static String hash(String str) throws NoSuchAlgorithmException {
+    protected static String hash(String str) throws NoSuchAlgorithmException {
         if(str == null || "".equals(str)) {
             return str;
         }
