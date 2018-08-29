@@ -30,18 +30,28 @@ public class Server {
 
         // UDP
         DatagramSocket socket = new DatagramSocket(portNumber);
-        byte[] receiveData = new byte[1024];
+        byte[] data = new byte[1024];
         byte[] sendData = new byte[1024];
 
-        DatagramPacket receivePacket = new DatagramPacket(receiveData,
-                receiveData.length);
+        DatagramPacket recvData = new DatagramPacket(data,
+                data.length);
         System.out.println("Esperando por datagrama UDP na porta " + portNumber);
 
         while(true) {
-            socket.receive(receivePacket);
-            ObjectInputStream iStream = new ObjectInputStream(new ByteArrayInputStream(receivePacket.getData()));
-            LogMessage m = (LogMessage) iStream.readObject();
-            System.out.println(m.toString());
+            socket.receive(recvData);
+            ObjectInputStream iStream = new ObjectInputStream(new ByteArrayInputStream(data));
+            LogMessage msg = (LogMessage) iStream.readObject();
+            System.out.println(msg.toString());
+
+            // Faz a verificacao de erro
+            if(!(Client.hash(msg.getSize()+ msg.getMsg()).equals(msg.getMd5()))) {
+                System.out.println("Falha na verificacao! Descartar mensagem");
+            }
+            else {
+                // Escreve mensagem no arquivo de saida
+                outFile.write(msg.getMsg()+"\n");
+                outFile.flush();
+            }
         }
         /*try (
                 ServerSocket serverSocket = new ServerSocket(portNumber);

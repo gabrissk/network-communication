@@ -25,10 +25,7 @@ public class Client {
 
         // UDP
 
-        DatagramSocket clientSocket = new DatagramSocket();
-        byte[] sendData = new byte[1024];
-        byte[] receiveData = new byte[1024];
-
+        DatagramSocket socket = new DatagramSocket();
 
         /*try (
                 Socket socket = new Socket(addr, portNumber);
@@ -36,27 +33,21 @@ public class Client {
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
         ) {*/
-        BufferedReader stdIn =
-                    new BufferedReader(new InputStreamReader(System.in));
-        String fromServer;
-        String fromUser;
 
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
                 ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-                ObjectOutput oo = new ObjectOutputStream(bStream);
-                LogMessage msg = setMessage(scanner.nextLine(), seq_num, perror);
-                //System.out.println(scanner.nextLine());
-                //out.writeObject(msg);
-                oo.writeObject(msg);
+                ObjectOutput out = new ObjectOutputStream(bStream);
+                LogMessage msg = setAndGetMessage(scanner.nextLine(), seq_num, perror);
+                out.writeObject(msg);
                 byte[] send_serial = bStream.toByteArray();
                 DatagramPacket sendPacket = new DatagramPacket(send_serial,
                         send_serial.length, addr, portNumber);
-                clientSocket.send(sendPacket);
+                socket.send(sendPacket);
                 seq_num++;
             }
-        clientSocket.close();
+        socket.close();
         /*} catch (UnknownHostException e) {
             System.err.println("Host desconhecido " + args[0]);
             System.exit(1);
@@ -67,7 +58,7 @@ public class Client {
         }*/
     }
 
-    private static LogMessage setMessage(String nextLine, long seq_num, double perror) throws NoSuchAlgorithmException {
+    private static LogMessage setAndGetMessage(String nextLine, long seq_num, double perror) throws NoSuchAlgorithmException {
         String md5 = hash(String.valueOf(nextLine.length()) + nextLine);
         double rdm = Math.random();
         if(rdm < perror) {
