@@ -36,35 +36,37 @@ public class Client {
             String fromServer;
             String fromUser;
 
+            long seq_num = 0;
             Scanner scanner = new Scanner(new File(args[0]));
             while (scanner.hasNextLine()) {
-                LogMessage msg = setMessage(scanner.nextLine(), perror);
+                LogMessage msg = setMessage(scanner.nextLine(), seq_num, perror);
                 //System.out.println(scanner.nextLine());
                 out.writeObject(msg);
+                seq_num++;
             }
 
         } catch (UnknownHostException e) {
-            System.err.println("Don't know about host " + args[0]);
+            System.err.println("Host desconhecido " + args[0]);
             System.exit(1);
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to " +
+            System.err.println("Nao conseguiu conectar a " +
                     args[0]);
             System.exit(1);
         }
     }
 
-    private static LogMessage setMessage(String nextLine, double perror) throws NoSuchAlgorithmException {
+    private static LogMessage setMessage(String nextLine, long seq_num, double perror) throws NoSuchAlgorithmException {
         String md5 = hash(String.valueOf(nextLine.length()) + nextLine);
         double rdm = Math.random();
         if(rdm < perror) {
             System.out.println("erro "+nextLine);
             md5 = hash(md5);
         }
-        return new LogMessage((short)nextLine.length(), nextLine, md5);
+        return new LogMessage((short)nextLine.length(), nextLine, md5, seq_num);
     }
 
 
-    // Retorna o hash
+    // Retorna o hash com algoritmo MD5
     public static String hash(String str) throws NoSuchAlgorithmException {
         if(str == null || "".equals(str)) {
             return str;
