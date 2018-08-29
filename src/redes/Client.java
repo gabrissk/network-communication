@@ -54,15 +54,12 @@ public class Client {
     }
 
     private static LogMessage setMessage(String nextLine, double perror) throws NoSuchAlgorithmException {
-        String md5 = hash(nextLine + String.valueOf(nextLine.length()));
-        System.out.println("antes " +md5);
+        String md5 = hash(String.valueOf(nextLine.length()) + nextLine);
         double rdm = Math.random();
         if(rdm < perror) {
+            System.out.println("erro "+nextLine);
             md5 = hash(md5);
-            System.out.println("erro "+md5);
         }
-        LogMessage message =new LogMessage((short)nextLine.length(), nextLine, md5);
-        System.out.println("md5: "+message.getMd5());
         return new LogMessage((short)nextLine.length(), nextLine, md5);
     }
 
