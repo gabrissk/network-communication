@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
+import static redes.LogMessage.setAndGetMessage;
+
 public class Client {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
@@ -126,28 +128,6 @@ public class Client {
         // e o tempo total de execução. Utilize um formato de impressão equivalente ao formato [%d %d %d %.3fs]
         // da função [printf] da biblioteca padrão do C.
 
-    }
-
-    private static LogMessage setAndGetMessage(String nextLine, long seq_num, double perror, Timestamp time) throws NoSuchAlgorithmException {
-        String md5 = hash(String.valueOf(seq_num) + String.valueOf(time.getSecs()) +
-                        String.valueOf(time.getNanos()) + String.valueOf((short)nextLine.length()) + nextLine);
-        double rdm = Math.random();
-        if(rdm < perror) {
-            System.out.println("erro "+nextLine);
-            md5 = hash(md5);
-        }
-        return new LogMessage(seq_num, time, (short)nextLine.length(), nextLine, md5);
-    }
-
-
-    // Retorna o hash com algoritmo MD5
-    protected static String hash(String str) throws NoSuchAlgorithmException {
-        if(str == null || "".equals(str)) {
-            return str;
-        }
-        MessageDigest message = MessageDigest.getInstance("MD5");
-        message.update(str.getBytes(),0,str.length());
-        return new BigInteger(1,message.digest()).toString(16);
     }
 
 
