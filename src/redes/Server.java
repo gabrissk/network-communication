@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
 
+import static redes.Message.hash;
+
 public class Server {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
@@ -67,7 +69,7 @@ public class Server {
             System.out.println(msg.toString()+"\n\n");
 
             // Faz a verificacao de erro
-            if(!(Client.hash(String.valueOf(msg.getSeq_num()) + String.valueOf(msg.getTime().getSecs()) +
+            if(!(Message.hash(String.valueOf(msg.getSeq_num()) + String.valueOf(msg.getTime().getSecs()) +
                     String.valueOf(msg.getTime().getNanos()) + String.valueOf((msg.getSize())) + msg.getMsg()).equals(msg.getMd5()))) {
                 System.out.println("Falha na verificacao! Descartar mensagem");
             }
