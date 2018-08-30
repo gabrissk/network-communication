@@ -14,7 +14,7 @@ public class Client {
 
         if (args.length < 4) {
             System.err.println(
-                    "Usage:  <file> <IP:port number> <Perror> <tout>");
+                    "Usage:  <file> <IP:port number> <tout> <Perror>");
             System.exit(1);
         }
 
