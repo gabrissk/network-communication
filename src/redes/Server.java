@@ -72,6 +72,9 @@ public class Server {
                 // Escreve mensagem no arquivo de saida
                 outFile.write(msg.getMsg()+"\n");
                 outFile.flush();
+
+
+
             }
         }
         /*try (

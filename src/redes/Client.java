@@ -40,8 +40,10 @@ public class Client {
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
+            // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
             long secs = Instant.now().getEpochSecond();
             long start = System.nanoTime();
+
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bStream);
             Timestamp time = new Timestamp(secs, Math.toIntExact(System.nanoTime()-start));
