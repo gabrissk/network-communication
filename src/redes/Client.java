@@ -10,7 +10,7 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Client {
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
         if (args.length < 4) {
             System.err.println(
@@ -52,39 +52,48 @@ public class Client {
             // Envia numero de sequencia
             out.writeObject(msg.getSeq_num());
             byte[] send_serial = bStream.toByteArray();
-            DatagramPacket sendPacket = new DatagramPacket(send_serial,
+            DatagramPacket pack = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
-            socket.send(sendPacket);
+            socket.send(pack);
 
             // Envia timestamp
             out.writeObject(msg.getTime());
             send_serial = bStream.toByteArray();
-            sendPacket = new DatagramPacket(send_serial,
+            pack = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
-            socket.send(sendPacket);
+            socket.send(pack);
 
             // Envia tamanho mensagem
             out.writeObject(msg.getMsg());
             send_serial = bStream.toByteArray();
-            sendPacket = new DatagramPacket(send_serial,
+            pack = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
-            socket.send(sendPacket);
+            socket.send(pack);
 
             //Envia mensagem
             out.writeObject(msg.getSize());
             send_serial = bStream.toByteArray();
-            sendPacket = new DatagramPacket(send_serial,
+            pack = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
-            socket.send(sendPacket);
+            socket.send(pack);
 
             // Envia codigo de verificacao de erro
             out.writeObject(msg.getMd5());
             send_serial = bStream.toByteArray();
-            sendPacket = new DatagramPacket(send_serial,
+            pack = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
-            socket.send(sendPacket);
+            socket.send(pack);
 
             seq_num++;
+
+            byte[] recvData = new byte[1024];
+            DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
+            socket.receive(rPack);
+            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
+            String str = (String) in.readObject();
+            System.out.println(str);
+
+
         }
         socket.close();
         /*} catch (UnknownHostException e) {

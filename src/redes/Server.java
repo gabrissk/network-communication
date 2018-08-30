@@ -1,10 +1,8 @@
 package redes;
 
+import javax.xml.crypto.Data;
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 
 public class Server {
@@ -30,7 +28,7 @@ public class Server {
 
         // UDP
         DatagramSocket socket = new DatagramSocket(portNumber);
-        byte[] data = new byte[1024];
+        byte[] recvData = new byte[1024];
         byte[] sendData = new byte[1024];
 
         long seq_num;
@@ -39,25 +37,25 @@ public class Server {
         short size;
         String md5;
 
-        DatagramPacket recvData = new DatagramPacket(data,
-                data.length);
+        DatagramPacket pack = new DatagramPacket(recvData,
+                recvData.length);
         System.out.println("Esperando por datagrama UDP na porta " + portNumber);
 
         while(true) {
-            socket.receive(recvData);
-            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data));
+            socket.receive(pack);
+            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             seq_num = (Long) in.readObject();
 
-            socket.receive(recvData);
+            socket.receive(pack);
             time = (Timestamp) in.readObject();
 
-            socket.receive(recvData);
+            socket.receive(pack);
             m = (String) in.readObject();
 
-            socket.receive(recvData);
+            socket.receive(pack);
             size = (short)in.readObject();
 
-            socket.receive(recvData);
+            socket.receive(pack);
             md5 = (String) in.readObject();
 
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
@@ -68,14 +66,22 @@ public class Server {
                     String.valueOf(msg.getTime().getNanos()) + String.valueOf((msg.getSize())) + msg.getMsg()).equals(msg.getMd5()))) {
                 System.out.println("Falha na verificacao! Descartar mensagem");
             }
-            else {
-                // Escreve mensagem no arquivo de saida
-                outFile.write(msg.getMsg()+"\n");
-                outFile.flush();
 
+            // Escreve mensagem no arquivo de saida
+            outFile.write(msg.getMsg()+"\n");
+            outFile.flush();
 
+            InetAddress addr = pack.getAddress();
+            int portNum = pack.getPort();
+            //DatagramPacket sPack = new DatagramPacket(recvData, recvData.length, addr, portNum);
 
-            }
+            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+            ObjectOutput out = new ObjectOutputStream(bStream);
+
+            out.writeObject("TESTE");
+            sendData = bStream.toByteArray();
+            DatagramPacket sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
+            socket.send(sPack);
         }
         /*try (
                 ServerSocket serverSocket = new ServerSocket(portNumber);
