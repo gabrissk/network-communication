@@ -15,7 +15,6 @@ public class Server {
             System.exit(1);
         }
 
-        final double perror = Double.parseDouble(args[2]);
 
         BufferedWriter outFile = null;
         try {
@@ -27,11 +26,18 @@ public class Server {
         }
 
         int portNumber = Integer.parseInt(args[1]);
+        final double perror = Double.parseDouble(args[2]);
 
         // UDP
         DatagramSocket socket = new DatagramSocket(portNumber);
         byte[] data = new byte[1024];
         byte[] sendData = new byte[1024];
+
+        long seq_num;
+        Timestamp time;
+        String m;
+        short size;
+        String md5;
 
         DatagramPacket recvData = new DatagramPacket(data,
                 data.length);
@@ -39,8 +45,22 @@ public class Server {
 
         while(true) {
             socket.receive(recvData);
-            ObjectInputStream iStream = new ObjectInputStream(new ByteArrayInputStream(data));
-            LogMessage msg = (LogMessage) iStream.readObject();
+            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data));
+            seq_num = (Long) in.readObject();
+
+            socket.receive(recvData);
+            time = (Timestamp) in.readObject();
+
+            socket.receive(recvData);
+            m = (String) in.readObject();
+
+            socket.receive(recvData);
+            size = (short)in.readObject();
+
+            socket.receive(recvData);
+            md5 = (String) in.readObject();
+
+            LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
             System.out.println(msg.toString());
 
             // Faz a verificacao de erro

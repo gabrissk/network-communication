@@ -6,8 +6,8 @@ public class LogMessage extends Message implements Serializable {
 
     private long seq_num;
     private Timestamp time;
-    private String msg;
     private short size;
+    private String msg;
     private String md5;
 
     public LogMessage(long seq_num, Timestamp time, short size, String msg, String md5) {
@@ -19,18 +19,18 @@ public class LogMessage extends Message implements Serializable {
 
     public Timestamp getTime() { return time; }
 
-    public String getMsg() {
-        return msg;
-    }
-
     public short getSize() {
         return size;
+    }
+
+    public String getMsg() {
+        return msg;
     }
 
     public String getMd5() { return this.md5; }
 
     @Override
     public String toString() {
-        return "seqNum: " +seq_num+ "\tTime: " +time.getSecs()+ ":" +time.getNanos()+ "\tMensagem: " +msg+ "\tsize: " +size+ "\tmd5: " +md5+ "\tseqNum: " +seq_num;
+        return "seqNum: " +seq_num+ "\tTime: " +time.getSecs()+ ":" +time.getNanos()+ "\tsize: " +size+ "\tmessage: " +msg+ "\tmd5: " +md5+ "\tseqNum: " +seq_num;
     }
 }

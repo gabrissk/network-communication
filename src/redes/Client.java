@@ -14,7 +14,7 @@ public class Client {
 
         if (args.length < 4) {
             System.err.println(
-                    "Usage:  <file> <IP:port number> <Perror>");
+                    "Usage:  <file> <IP:port number> <Perror> <tout>");
             System.exit(1);
         }
 
@@ -46,11 +46,42 @@ public class Client {
             ObjectOutput out = new ObjectOutputStream(bStream);
             Timestamp time = new Timestamp(secs, Math.toIntExact(System.nanoTime()-start));
             LogMessage msg = setAndGetMessage(scanner.nextLine(), seq_num, perror, time);
-            out.writeObject(msg);
+
+            // Envia numero de sequencia
+            out.writeObject(msg.getSeq_num());
             byte[] send_serial = bStream.toByteArray();
             DatagramPacket sendPacket = new DatagramPacket(send_serial,
                     send_serial.length, addr, portNumber);
             socket.send(sendPacket);
+
+            // Envia timestamp
+            out.writeObject(msg.getTime());
+            send_serial = bStream.toByteArray();
+            sendPacket = new DatagramPacket(send_serial,
+                    send_serial.length, addr, portNumber);
+            socket.send(sendPacket);
+
+            // Envia tamanho mensagem
+            out.writeObject(msg.getMsg());
+            send_serial = bStream.toByteArray();
+            sendPacket = new DatagramPacket(send_serial,
+                    send_serial.length, addr, portNumber);
+            socket.send(sendPacket);
+
+            //Envia mensagem
+            out.writeObject(msg.getSize());
+            send_serial = bStream.toByteArray();
+            sendPacket = new DatagramPacket(send_serial,
+                    send_serial.length, addr, portNumber);
+            socket.send(sendPacket);
+
+            // Envia codigo de verificacao de erro
+            out.writeObject(msg.getMd5());
+            send_serial = bStream.toByteArray();
+            sendPacket = new DatagramPacket(send_serial,
+                    send_serial.length, addr, portNumber);
+            socket.send(sendPacket);
+
             seq_num++;
         }
         socket.close();
