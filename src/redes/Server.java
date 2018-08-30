@@ -45,21 +45,26 @@ public class Server {
             socket.receive(pack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             seq_num = (Long) in.readObject();
+            System.out.println(seq_num);
 
             socket.receive(pack);
             time = (Timestamp) in.readObject();
+            System.out.println(time);
 
             socket.receive(pack);
             m = (String) in.readObject();
+            System.out.println(m);
 
             socket.receive(pack);
             size = (short)in.readObject();
+            System.out.println(size);
 
             socket.receive(pack);
             md5 = (String) in.readObject();
+            System.out.println(md5);
 
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
-            System.out.println(msg.toString());
+            System.out.println(msg.toString()+"\n\n");
 
             // Faz a verificacao de erro
             if(!(Client.hash(String.valueOf(msg.getSeq_num()) + String.valueOf(msg.getTime().getSecs()) +
@@ -78,9 +83,21 @@ public class Server {
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bStream);
 
-            out.writeObject("TESTE");
+            out.writeObject(seq_num);
             sendData = bStream.toByteArray();
             DatagramPacket sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
+            socket.send(sPack);
+
+
+            out.writeObject(time);
+            sendData = bStream.toByteArray();
+            sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
+            socket.send(sPack);
+
+
+            out.writeObject(md5);
+            sendData = bStream.toByteArray();
+            sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
             socket.send(sPack);
         }
         /*try (

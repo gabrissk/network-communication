@@ -84,15 +84,30 @@ public class Client {
                     send_serial.length, addr, portNumber);
             socket.send(pack);
 
-            seq_num++;
 
             byte[] recvData = new byte[1024];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
             socket.receive(rPack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            String str = (String) in.readObject();
-            System.out.println(str);
+            long seqNum = (long) in.readObject();
+            System.out.println(seqNum);
 
+
+            socket.receive(rPack);
+            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
+            Timestamp timeS = (Timestamp) in.readObject();
+            System.out.println(timeS);
+
+
+            socket.receive(rPack);
+            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
+            String md5 = (String) in.readObject();
+            System.out.println(md5);
+
+            Ack ack = new Ack(seq_num, timeS, md5);
+            System.out.println(ack+"\n");
+
+            seq_num++;
 
         }
         socket.close();

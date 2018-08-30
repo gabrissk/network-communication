@@ -8,7 +8,7 @@ public class Ack extends Message implements Serializable {
     private Timestamp time;
     private String md5;
 
-    public Ack(long seq_num, Timestamp time, short size, String msg, String md5) {
+    public Ack(long seq_num, Timestamp time, String md5) {
         //super(md5);
         this.seq_num = seq_num; this.time = time; this.md5 = md5;
     }

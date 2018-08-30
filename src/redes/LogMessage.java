@@ -31,7 +31,7 @@ public class LogMessage extends Message implements Serializable {
 
     @Override
     public String toString() {
-        return "seqNum: " +seq_num+ "\tTime: " +time.getSecs()+ ":" +time.getNanos()+
+        return "seqNum: " +seq_num+ "\tTime: " +time+
                 "\tsize: " +size+ "\tmessage: " +msg+ "\tmd5: " +md5;
     }
 }

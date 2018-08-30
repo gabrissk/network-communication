@@ -19,4 +19,9 @@ public class Timestamp implements Serializable {
     public int getNanos() {
         return nanos;
     }
+
+    @Override
+    public String toString() {
+        return secs +":"+ nanos;
+    }
 }
