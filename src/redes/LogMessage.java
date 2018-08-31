@@ -37,11 +37,11 @@ public class LogMessage extends Message implements Serializable {
     }
 
     static LogMessage setAndGetMessage(String nextLine, long seq_num, double perror, Timestamp time) throws NoSuchAlgorithmException {
-        String md5 = hash(String.valueOf(seq_num) + String.valueOf(time.getSecs()) +
-                String.valueOf(time.getNanos()) + String.valueOf((short)nextLine.length()) + nextLine);
+        String md5 = hash(String.valueOf(seq_num) + time.toString()
+                + String.valueOf((short)nextLine.length()) + nextLine);
         double rdm = Math.random();
         if(rdm < perror) {
-            System.out.println("erro "+nextLine +" md5 antigo: " +md5);
+            System.out.println("erro "+nextLine);
             md5 = hash(md5);
         }
         return new LogMessage(seq_num, time, (short)nextLine.length(), nextLine, md5);

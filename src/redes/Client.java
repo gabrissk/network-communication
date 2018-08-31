@@ -1,12 +1,15 @@
 package redes;
 
 import java.io.*;
-import java.math.BigInteger;
-import java.net.*;
-import java.security.MessageDigest;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Scanner;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.function.ToDoubleBiFunction;
 import java.util.regex.Pattern;
 
 import static redes.LogMessage.setAndGetMessage;
@@ -20,7 +23,6 @@ public class Client {
             System.exit(1);
         }
 
-
         final String[] ip_port = args[1].split(Pattern.quote(":"));
         InetAddress addr = InetAddress.getByName(ip_port[0]);
         int portNumber = Integer.parseInt(ip_port[1]);
@@ -28,17 +30,9 @@ public class Client {
         final double perror = Double.parseDouble(args[3]);
 
 
-        // UDP
-
         DatagramSocket socket = new DatagramSocket();
 
-        /*try (
-                Socket socket = new Socket(addr, portNumber);
-                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                BufferedReader in = new BufferedReader(
-                        new InputStreamReader(socket.getInputStream()));
-        ) {*/
-
+        Timer timer = new Timer();
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
@@ -50,6 +44,8 @@ public class Client {
             ObjectOutput out = new ObjectOutputStream(bStream);
             Timestamp time = new Timestamp(secs, Math.toIntExact(System.nanoTime()-start));
             LogMessage msg = setAndGetMessage(scanner.nextLine(), seq_num, perror, time);
+
+            /*** ENVIA MENSAGEM ***/
 
             // Envia numero de sequencia
             out.writeObject(msg.getSeq_num());
@@ -86,32 +82,37 @@ public class Client {
                     send_serial.length, addr, portNumber);
             socket.send(pack);
 
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    // TODO: 30/08/18 IMPLEMENTAR A LOGICA DE REENVIO DE MENSAGEM
+                }
+            }, tout);
+
+            /*** RECEBE ACK ***/
 
             byte[] recvData = new byte[1024];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
             socket.receive(rPack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             long seqNum = (long) in.readObject();
-            System.out.println(seqNum);
 
 
             socket.receive(rPack);
-            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             Timestamp timeS = (Timestamp) in.readObject();
-            System.out.println(timeS);
 
 
             socket.receive(rPack);
-            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             String md5 = (String) in.readObject();
-            System.out.println(md5);
 
-            Ack ack = new Ack(seq_num, timeS, md5);
+            Ack ack = new Ack(seqNum, timeS, md5);
             System.out.println(ack+"\n");
 
             seq_num++;
 
         }
+
+        timer.cancel();
         socket.close();
         /*} catch (UnknownHostException e) {
             System.err.println("Host desconhecido " + args[0]);
