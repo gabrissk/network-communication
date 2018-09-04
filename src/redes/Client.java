@@ -17,7 +17,7 @@ import static redes.LogMessage.setAndGetMessage;
 public class Client {
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
-        if (args.length < 4) {
+        if (args.length < 5) {
             System.err.println(
                     "Usage:  <file> <IP:port number> <tout> <Perror>");
             System.exit(1);
@@ -26,8 +26,10 @@ public class Client {
         final String[] ip_port = args[1].split(Pattern.quote(":"));
         InetAddress addr = InetAddress.getByName(ip_port[0]);
         int portNumber = Integer.parseInt(ip_port[1]);
-        int tout = Integer.parseInt(args[2]);
-        final double perror = Double.parseDouble(args[3]);
+        int tout = Integer.parseInt(args[3]);
+        final double perror = Double.parseDouble(args[4]);
+
+        SlidingWindow window = new SlidingWindow(Integer.parseInt(args[2]));
 
 
         DatagramSocket socket = new DatagramSocket();
