@@ -50,7 +50,6 @@ public class LogMessage extends Message implements Serializable {
         LogMessage msg = new LogMessage(seq_num, time, (short)nextLine.length(), nextLine, md5);
         double rdm = Math.random();
         if(rdm < perror) {
-            System.out.println("erro "+nextLine);
             msg.setMd5(hash(md5));
             msg.setErr(true);
 
