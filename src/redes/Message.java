@@ -1,6 +1,5 @@
 package redes;
 
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -12,17 +11,6 @@ public abstract class Message {
 
     public Message(){}
 
-    /*public Message(String md5) {
-       this.md5 = md5;
-    }*/
-
-    /*public String getMd5() {
-        return this.md5;
-    }*/
-
-    /*public static long getSeq_num() {
-        return seq_num;
-    }*/
 
     // Retorna o hash com algoritmo MD5
     protected static String hash(String str) throws NoSuchAlgorithmException {
@@ -33,4 +21,9 @@ public abstract class Message {
         message.update(str.getBytes(),0,str.length());
         return new BigInteger(1,message.digest()).toString(16);
     }
+
+    protected static boolean checkMd5(String a, String b) throws NoSuchAlgorithmException {
+        return hash(a).equals(b);
+    }
+
 }
