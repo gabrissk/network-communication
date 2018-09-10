@@ -1,14 +1,12 @@
 package redes;
 
-import org.omg.PortableInterceptor.SUCCESSFUL;
-
 import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
 
@@ -27,6 +25,8 @@ public class Client {
     private int totalLogs;
     private int sent;
     private int corrupted;
+    //private Instant timer;
+    private long timer;
 
     public Client(String[] ip_port, String[] args) throws UnknownHostException, SocketException {
         this.addr = InetAddress .getByName(ip_port[0]);
@@ -53,7 +53,8 @@ public class Client {
         final String[] ip_port = args[1].split(Pattern.quote(":"));
 
         Client client = new Client(ip_port, args);
-
+        //client.timer = Instant.now();
+        client.timer = System.currentTimeMillis();
 
         Thread t1 = new Thread(() -> {
             try {
@@ -61,8 +62,6 @@ public class Client {
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -91,13 +90,6 @@ public class Client {
 
         //t1.join();
         //t2.join();
-
-
-        // TODO: 29/08/18
-        // Ao final da execução, o cliente deve imprimir uma linha com o número de mensagens de log distintas,
-        // o número de mensagens de log transmitidas (incluindo retransmissões), o número de mensagens transmitidas com MD5 incorreto,
-        // e o tempo total de execução. Utilize um formato de impressão equivalente ao formato [%d %d %d %.3fs]
-        // da função [printf] da biblioteca padrão do C.
 
     }
 
@@ -133,13 +125,12 @@ public class Client {
                 sendMessage(client, msg);
             }
         }
-
-        System.out.printf("\n%d %d %d", client.totalLogs, client.sent, client.corrupted);
+        System.out.printf("\n%d %d %d %.3f", client.totalLogs, client.sent, client.corrupted, (double)(System.currentTimeMillis()-client.timer)/1000);
         System.exit(0);
     }
 
     private static void start(Client client, String[] args)
-            throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
+            throws IOException, NoSuchAlgorithmException, InterruptedException {
 
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
