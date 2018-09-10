@@ -1,5 +1,7 @@
 package redes;
 
+import org.omg.PortableInterceptor.SUCCESSFUL;
+
 import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
@@ -22,6 +24,9 @@ public class Client {
     private SlidingWindow window;
     private DatagramSocket socket;
     private ArrayList<LogMessage> logs;
+    private int totalLogs;
+    private int sent;
+    private int corrupted;
 
     public Client(String[] ip_port, String[] args) throws UnknownHostException, SocketException {
         this.addr = InetAddress .getByName(ip_port[0]);
@@ -31,6 +36,9 @@ public class Client {
         this.perror = Double.parseDouble(args[4]);
         this.socket = new DatagramSocket();
         this.logs = new ArrayList<>();
+        this.totalLogs = -1;
+        this.sent = 0;
+        this.corrupted = 0;
 
     }
 
@@ -38,21 +46,13 @@ public class Client {
 
         if (args.length < 5) {
             System.err.println(
-                    "Usage:  <file> <IP:port number> <tout> <Perror>");
+                    "Usage:  <file> <IP:port> <Wtx> <Tout> <Perror>");
             System.exit(1);
         }
 
         final String[] ip_port = args[1].split(Pattern.quote(":"));
 
         Client client = new Client(ip_port, args);
-
-        /*new Thread(() -> {
-            int i=0;
-            while (i < 10000) {
-                System.out.println(i++);
-            }
-        }).start();*/
-
 
 
         Thread t1 = new Thread(() -> {
@@ -101,11 +101,12 @@ public class Client {
 
     }
 
+    /*** RECEBE ACKs ***/
     static synchronized void recvAcks(Client client)
             throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InterruptedException {
-        /*** RECEBE ACK ***/
 
-        while(true) {
+        while(client.totalLogs != client.window.getTotalAcks()) {
+            //System.out.println(client.totalLogs+" "+client.window.getTotalAcks());
             byte[] recvData = new byte[16384];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
@@ -121,22 +122,25 @@ public class Client {
             Thread.sleep(100);
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
                 client.window.update(seqNum);
+                client.window.setTotalAcks(client.window.getTotalAcks()+1);
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
                 //client.window.print();
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
                 LogMessage msg = client.logs.get((int)ack.getSeq_num());
+                /*** DOCUMENTAR QUE PACOTE É ENVIADO APÓS RETORNAR UM ACK CORROMPIDO ***/
                 sendMessage(client, msg);
             }
         }
 
+        System.out.printf("\n%d %d %d", client.totalLogs, client.sent, client.corrupted);
+        System.exit(0);
     }
 
     private static void start(Client client, String[] args)
             throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
 
-        Timer timer = new Timer();
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
@@ -193,8 +197,13 @@ public class Client {
                     send_serial.length, client.addr, client.portNumber);
             client.socket.send(pack);;
             //System.out.println(msg);
+
             System.out.print("Enviando pacote "+msg.getSeq_num()+" para o servidor com mensagem "+msg.getMsg());
-            if (msg.isErr()) System.out.println(" (com erro).");
+            client.sent++;
+            if (msg.isErr()) {
+                System.out.println(" (com erro).");
+                client.corrupted++;
+            }
             else System.out.println(".");
 
             client.logs.get((int)msg.getSeq_num()).timer.schedule(new TimerTask() {
@@ -218,7 +227,7 @@ public class Client {
                         }
                     }
                 }
-            }, client.tout);
+            }, client.tout*1000);
 
             //sendMessage(client, msg);
             seq_num++;
@@ -226,11 +235,11 @@ public class Client {
 
             //recvAcks(socket, portNumber,win);
         }
+        client.totalLogs = (int)seq_num;
 
-        timer.cancel();
-        Thread.currentThread().interrupt();
     }
 
+    /*** ENVIA MENSAGENS***/
     private static void sendMessage(Client client, LogMessage msg) throws IOException, NoSuchAlgorithmException, InterruptedException {
         // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
         long secs = Instant.now().getEpochSecond();
@@ -243,7 +252,11 @@ public class Client {
         if(client.window.getPacks().get(msg.getSeq_num())) return;
 
         System.out.print("Enviando pacote "+msg.getSeq_num()+" para o servidor com mensagem "+msg.getMsg());
-        if (msg.isErr()) System.out.println(" (com erro).");
+        client.sent++;
+        if (msg.isErr()) {
+            System.out.println(" (com erro).");
+            client.corrupted++;
+        }
         else System.out.println(".");
 
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -306,7 +319,7 @@ public class Client {
                     }
                 }
             }
-        }, client.tout);
+        }, client.tout*1000);
 
     }
 

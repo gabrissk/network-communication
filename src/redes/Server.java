@@ -15,17 +15,19 @@ public class Server {
     private int portNumber;
     private double perror;
     private DatagramSocket socket;
+    private SlidingWindow window;
 
     public Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
-        this.perror = Double.parseDouble(args[2]);
-        this.socket = new DatagramSocket(portNumber);
+        this.window = new SlidingWindow(Integer.parseInt(args[2]));
+        this.perror = Double.parseDouble(args[3]);
+        this.socket = new DatagramSocket(this.portNumber);
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
 
-        if (args.length < 3) {
-            System.err.println("Usage: <file> <port number> <Perror>");
+        if (args.length < 4) {
+            System.err.println("Usage: <file> <Port> <Wrx> <Perror>");
             exit(1);
         }
 
@@ -92,9 +94,6 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-            // Escreve mensagem no arquivo de saida
-            outFile.write(msg.getMsg() + "\n");
-            outFile.flush();
 
 
             /*** ENVIA ACK ***/
@@ -105,6 +104,11 @@ public class Server {
             if (rdm < server.perror) {
                 ack.setMd5(hash(md5));
                 ack.setErr(true);
+            }
+            else {
+                // Escreve mensagem no arquivo de saida
+                outFile.write(msg.getMsg() + "\n");
+                outFile.flush();
             }
             send(server, ack, pack);
         }
