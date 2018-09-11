@@ -21,6 +21,7 @@ public class Client {
     private SlidingWindow window;
     private DatagramSocket socket;
     private ArrayList<LogMessage> logs;
+    private int totalAcks;
     private int totalLogs;
     private int sent;
     private int corrupted;
@@ -34,6 +35,7 @@ public class Client {
         this.perror = Double.parseDouble(args[4]);
         this.socket = new DatagramSocket();
         this.logs = new ArrayList<>();
+        this.totalAcks = 0;
         this.totalLogs = -1;
         this.sent = 0;
         this.corrupted = 0;
@@ -82,7 +84,7 @@ public class Client {
             throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
 
         // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
-        while(client.totalLogs != client.window.getTotalAcks()) {
+        while(client.totalLogs != client.totalAcks) {
             byte[] recvData = new byte[16384];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
@@ -98,7 +100,7 @@ public class Client {
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
                 client.window.update(seqNum);
-                client.window.setTotalAcks(client.window.getTotalAcks()+1);
+                client.totalAcks++;
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
             }
             else {

@@ -6,13 +6,11 @@ public class SlidingWindow {
     private long size;
     private long ptr;
     private HashMap<Long, Boolean> packs;
-    private int totalAcks;
 
     SlidingWindow(int size) {
         this.size = size;
         this.ptr = 0;
         this.packs = new HashMap<>();
-        this.totalAcks = 0;
     }
 
     // Insere pacote na janela
@@ -41,12 +39,9 @@ public class SlidingWindow {
         return packs;
     }
 
-    public void setTotalAcks(int totalAcks) {
-        this.totalAcks = totalAcks;
-    }
-
-    public int getTotalAcks() {
-        return totalAcks;
+    public void clearWindow() {
+        this.ptr = 0;
+        this.packs = new HashMap<>();
     }
 
     public void print() {

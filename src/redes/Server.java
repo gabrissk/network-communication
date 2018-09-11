@@ -64,7 +64,7 @@ public class Server {
         while(true) {
 
             /*** RECEBE MENSAGEM ***/
-
+            Thread.sleep(100);
             server.socket.receive(pack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             seq_num = (Long) in.readObject();
@@ -84,8 +84,13 @@ public class Server {
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
 
             if(server.window.getPacks().get(seq_num) == null) server.window.insert(seq_num);
+
+            if(server.window.getPacks().get(seq_num) == true) {
+                server.window.clearWindow();
+                System.out.println("FIM DE UM CLIENTE");
+            }
             // Verifica se o pacote pode ser confirmado; caso contrario, o ignora
-            if(!server.window.insideWindow(seq_num)) continue;
+            //if(!server.window.insideWindow(seq_num)) continue;
 
             // Faz a verificacao de erro
             if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + time.toString()
@@ -108,7 +113,11 @@ public class Server {
                 // Escreve mensagem no arquivo de saida
                 outFile.write(msg.getMsg() + "\n");
                 outFile.flush();
-                server.window.update(seq_num);
+                try {
+                    server.window.update(seq_num);
+                } catch (NullPointerException e) {
+                    server.window.print();
+                }
             }
             send(server, ack, pack);
         }
