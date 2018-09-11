@@ -10,7 +10,6 @@ public class Ack extends Message implements Serializable {
     private  boolean err;
 
     public Ack(long seq_num, Timestamp time, String md5) {
-        //super(md5);
         this.seq_num = seq_num; this.time = time; this.md5 = md5; this.err = false;
     }
 

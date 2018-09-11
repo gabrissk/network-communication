@@ -52,7 +52,6 @@ public class LogMessage extends Message implements Serializable {
         if(rdm < perror) {
             msg.setMd5(hash(md5));
             msg.setErr(true);
-
         }
         return msg;
     }

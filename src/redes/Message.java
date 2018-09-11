@@ -19,7 +19,7 @@ public abstract class Message {
         }
         MessageDigest message = MessageDigest.getInstance("MD5");
         message.update(str.getBytes(),0,str.length());
-        return new BigInteger(1,message.digest()).toString(16);
+        return new BigInteger(1,message.digest()).toString(16).substring(0,16);
     }
 
     protected static boolean checkMd5(String a, String b) throws NoSuchAlgorithmException {

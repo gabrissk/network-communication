@@ -5,6 +5,7 @@ import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
@@ -80,26 +81,25 @@ public class Client {
     }
 
     /*** RECEBE ACKs ***/
+    @SuppressWarnings("unchecked")
     private static synchronized void recvAcks(Client client)
             throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
 
+        byte[] recvData = new byte[16384];
+
         // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
         while(client.totalLogs != client.totalAcks) {
-            byte[] recvData = new byte[16384];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
             client.socket.receive(rPack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            long seqNum = (long) in.readObject();
-            client.socket.receive(rPack);
-            Timestamp timeS = (Timestamp) in.readObject();
-            client.socket.receive(rPack);
-            String md5 = (String) in.readObject();
 
-            Ack ack = new Ack(seqNum, timeS, md5);
+            HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
+            Ack ack = new Ack((long)l.get(0), new Timestamp((long)l.get(1), (int)l.get(2)), (String) l.get(3));
+
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
-                client.window.update(seqNum);
+                client.window.update(ack.getSeq_num());
                 client.totalAcks++;
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
             }
@@ -168,40 +168,18 @@ public class Client {
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bStream);
 
-        // Envia numero de sequencia
-        out.writeObject(msg.getSeq_num());
-        byte[] send_serial = bStream.toByteArray();
-        DatagramPacket pack = new DatagramPacket(send_serial,
-                send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);
+        HashMap<Integer, Object> list = new HashMap<>();
+        list.put(0, msg.getSeq_num());
+        list.put(1, msg.getTime().getSecs());
+        list.put(2, msg.getTime().getNanos());
+        list.put(3, msg.getSize());
+        list.put(4, msg.getMsg());
+        list.put(5, msg.getMd5());
 
-        // Envia timestamp
-        out.writeObject(msg.getTime());
-        send_serial = bStream.toByteArray();
-        pack = new DatagramPacket(send_serial,
-                send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);
-
-        // Envia tamanho mensagem
-        out.writeObject(msg.getMsg());
-        send_serial = bStream.toByteArray();
-        pack = new DatagramPacket(send_serial,
-                send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);
-
-        //Envia mensagem
-        out.writeObject(msg.getSize());
-        send_serial = bStream.toByteArray();
-        pack = new DatagramPacket(send_serial,
-                send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);
-
-        // Envia codigo de verificacao de erro
-        out.writeObject(msg.getMd5());
-        send_serial = bStream.toByteArray();
-        pack = new DatagramPacket(send_serial,
-                send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);
+        out.writeObject(list);
+        byte[] send = bStream.toByteArray();
+        DatagramPacket p = new DatagramPacket(send, send.length, client.addr, client.portNumber);
+        client.socket.send(p);
 
         LogMessage finalMsg = msg;
         // Temporizador que dispara após "Tout" segundos -> caso não tenha recebido ACK do pacote, reenvia
