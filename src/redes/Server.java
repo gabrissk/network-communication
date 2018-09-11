@@ -62,10 +62,11 @@ public class Server {
 
             server.socket.receive(pack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
+            /*HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
 
             LogMessage msg = new LogMessage((long)l.get(0), new Timestamp((long)l.get(1),(int)l.get(2)),
-                    (short)l.get(3), (String)l.get(4), (String)l.get(5));
+                    (short)l.get(3), (String)l.get(4), (String)l.get(5));*/
+            LogMessage msg = (LogMessage) in.readObject();
 
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
@@ -125,12 +126,13 @@ public class Server {
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bStream);
 
-        HashMap<Integer, Object> list = new HashMap<>();
+        /*HashMap<Integer, Object> list = new HashMap<>();
         list.put(0, ack.getSeq_num());
         list.put(1, ack.getTime().getSecs());
         list.put(2, ack.getTime().getNanos());
         list.put(3, ack.getMd5());
-        out.writeObject(list);
+        out.writeObject(list);*/
+        out.writeObject(ack);
         sendData = bStream.toByteArray();
         DatagramPacket sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
         server.socket.send(sPack);

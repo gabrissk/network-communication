@@ -20,7 +20,7 @@ public class SlidingWindow {
 
     // Retorna se o pacote pode ser enviado
     public boolean insideWindow(long seq) throws InterruptedException {
-        Thread.sleep(0,1);
+        Thread.sleep(0,1); // Sleep essencial
         return seq >= this.ptr && seq <= this.size+this.ptr-1;
     }
 
@@ -39,10 +39,10 @@ public class SlidingWindow {
         return packs;
     }
 
-    public void clearWindow() {
+    /*public void clearWindow() {
         this.ptr = 0;
         this.packs = new HashMap<>();
-    }
+    }*/
 
     public void print() {
         HashMap<Long, Boolean> pc = this.packs;

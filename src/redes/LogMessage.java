@@ -11,7 +11,7 @@ public class LogMessage extends Message implements Serializable {
     private short size;
     private String msg;
     private String md5;
-    Timer timer;
+    transient Timer timer;
     private boolean err;
 
     public LogMessage(long seq_num, Timestamp time, short size, String msg, String md5) {

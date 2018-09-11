@@ -75,7 +75,7 @@ public class Client {
         } );
 
         t1.start();
-        Thread.sleep(1);
+        Thread.sleep(1);    // Para rodar concorrentemente os metodos de envio e recebimento de pacotes
         t2.start();
 
     }
@@ -93,9 +93,11 @@ public class Client {
 
             client.socket.receive(rPack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-
-            HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
-            Ack ack = new Ack((long)l.get(0), new Timestamp((long)l.get(1), (int)l.get(2)), (String) l.get(3));
+            // Transforma o objeto recebido num HashMap
+            /*HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
+            // Usa os campos do map para formar o Ack
+            Ack ack = new Ack((long)l.get(0), new Timestamp((long)l.get(1), (int)l.get(2)), (String) l.get(3));*/
+            Ack ack = (Ack)in.readObject();
 
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
@@ -168,15 +170,16 @@ public class Client {
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bStream);
 
-        HashMap<Integer, Object> list = new HashMap<>();
+        /*HashMap<Integer, Object> list = new HashMap<>();
         list.put(0, msg.getSeq_num());
         list.put(1, msg.getTime().getSecs());
         list.put(2, msg.getTime().getNanos());
         list.put(3, msg.getSize());
         list.put(4, msg.getMsg());
-        list.put(5, msg.getMd5());
+        list.put(5, msg.getMd5());*/
 
-        out.writeObject(list);
+        //out.writeObject(list);
+        out.writeObject(msg);
         byte[] send = bStream.toByteArray();
         DatagramPacket p = new DatagramPacket(send, send.length, client.addr, client.portNumber);
         client.socket.send(p);
