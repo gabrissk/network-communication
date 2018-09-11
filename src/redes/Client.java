@@ -3,7 +3,6 @@ package redes;
 import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -25,14 +24,13 @@ public class Client {
     private int totalLogs;
     private int sent;
     private int corrupted;
-    //private Instant timer;
     private long timer;
 
-    public Client(String[] ip_port, String[] args) throws UnknownHostException, SocketException {
+    private Client(String[] ip_port, String[] args) throws UnknownHostException, SocketException {
         this.addr = InetAddress .getByName(ip_port[0]);
         this.portNumber = Integer.parseInt(ip_port[1]);
         this.window = new SlidingWindow(Integer.parseInt(args[2]));
-        this.tout = Integer.parseInt(args[3]);;
+        this.tout = Integer.parseInt(args[3]);
         this.perror = Double.parseDouble(args[4]);
         this.socket = new DatagramSocket();
         this.logs = new ArrayList<>();
@@ -42,28 +40,23 @@ public class Client {
 
     }
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException {
 
         if (args.length < 5) {
             System.err.println(
-                    "Usage:  <file> <IP:port> <Wtx> <Tout> <Perror>");
+                    "Uso:  <arquivo> <IP:port> <Wtx> <Tout> <Perror>");
             System.exit(1);
         }
 
         final String[] ip_port = args[1].split(Pattern.quote(":"));
 
         Client client = new Client(ip_port, args);
-        //client.timer = Instant.now();
         client.timer = System.currentTimeMillis();
 
         Thread t1 = new Thread(() -> {
             try {
                 start(client, args);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | NoSuchAlgorithmException | InterruptedException e) {
                 e.printStackTrace();
             }
         } );
@@ -71,13 +64,7 @@ public class Client {
         Thread t2 =new Thread(() -> {
             try {
                 recvAcks(client);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
+            } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
         } );
@@ -86,19 +73,13 @@ public class Client {
         Thread.sleep(1);
         t2.start();
 
-        //client.socket.close();
-
-        //t1.join();
-        //t2.join();
-
     }
 
     /*** RECEBE ACKs ***/
-    static synchronized void recvAcks(Client client)
-            throws IOException, ClassNotFoundException, NoSuchAlgorithmException, InterruptedException {
+    private static synchronized void recvAcks(Client client)
+            throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
 
         while(client.totalLogs != client.window.getTotalAcks()) {
-            //System.out.println(client.totalLogs+" "+client.window.getTotalAcks());
             byte[] recvData = new byte[16384];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
@@ -111,12 +92,10 @@ public class Client {
             String md5 = (String) in.readObject();
 
             Ack ack = new Ack(seqNum, timeS, md5);
-            Thread.sleep(100);
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
                 client.window.update(seqNum);
                 client.window.setTotalAcks(client.window.getTotalAcks()+1);
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
-                //client.window.print();
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
@@ -126,6 +105,7 @@ public class Client {
             }
         }
         System.out.printf("\n%d %d %d %.3f", client.totalLogs, client.sent, client.corrupted, (double)(System.currentTimeMillis()-client.timer)/1000);
+        client.socket.close();
         System.exit(0);
     }
 
@@ -138,9 +118,8 @@ public class Client {
 
             // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
             Instant inst = Instant.now();
-            long start = System.nanoTime();
 
-            while(!client.window.canSend(seq_num)){ continue;}
+            while(!client.window.canSend(seq_num)){ }
             ByteArrayOutputStream bStream = new ByteArrayOutputStream();
             ObjectOutput out = new ObjectOutputStream(bStream);
             Timestamp time = new Timestamp(inst.getEpochSecond(), inst.getNano());
@@ -152,94 +131,22 @@ public class Client {
 
 
             /*** ENVIA MENSAGEM ***/
-
-            // Envia numero de sequencia
-            out.writeObject(msg.getSeq_num());
-            byte[] send_serial = bStream.toByteArray();
-            DatagramPacket pack = new DatagramPacket(send_serial,
-                    send_serial.length, client.addr, client.portNumber);
-            client.socket.send(pack);
-
-            // Envia timestamp
-            out.writeObject(msg.getTime());
-            send_serial = bStream.toByteArray();
-            pack = new DatagramPacket(send_serial,
-                    send_serial.length, client.addr, client.portNumber);
-            client.socket.send(pack);
-
-            // Envia tamanho mensagem
-            out.writeObject(msg.getMsg());
-            send_serial = bStream.toByteArray();
-            pack = new DatagramPacket(send_serial,
-                    send_serial.length, client.addr, client.portNumber);
-            client.socket.send(pack);
-
-            //Envia mensagem
-            out.writeObject(msg.getSize());
-            send_serial = bStream.toByteArray();
-            pack = new DatagramPacket(send_serial,
-                    send_serial.length, client.addr, client.portNumber);
-            client.socket.send(pack);
-
-            // Envia codigo de verificacao de erro
-            out.writeObject(msg.getMd5());
-            send_serial = bStream.toByteArray();
-            pack = new DatagramPacket(send_serial,
-                    send_serial.length, client.addr, client.portNumber);
-            client.socket.send(pack);;
-            //System.out.println(msg);
-
-            System.out.print("Enviando pacote "+msg.getSeq_num()+" para o servidor com mensagem "+msg.getMsg());
-            client.sent++;
-            if (msg.isErr()) {
-                System.out.println(" (com erro).");
-                client.corrupted++;
-            }
-            else System.out.println(".");
-
-            client.logs.get((int)msg.getSeq_num()).timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    if(!client.window.getPacks().get(msg.getSeq_num())) {
-                        System.out.println("Pacote "+ msg.getSeq_num()+" nao chegou. Reenviando...");
-                        try {
-                            sendMessage(client, msg);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (NoSuchAlgorithmException e) {
-                            e.printStackTrace();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }, client.tout*1000);
-
-            //sendMessage(client, msg);
+            sendMessage(client, msg);
             seq_num++;
 
-
-            //recvAcks(socket, portNumber,win);
         }
         client.totalLogs = (int)seq_num;
 
     }
 
     /*** ENVIA MENSAGENS***/
-    private static void sendMessage(Client client, LogMessage msg) throws IOException, NoSuchAlgorithmException, InterruptedException {
+    private static void sendMessage(Client client, LogMessage msg) throws IOException, NoSuchAlgorithmException {
         // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
         long secs = Instant.now().getEpochSecond();
         long start = System.nanoTime();
         Timestamp time = new Timestamp(secs, Math.toIntExact(System.nanoTime()-start));
-        LogMessage m = msg;
         msg = setAndGetMessage(msg.getMsg(), msg.getSeq_num(), client.perror, time);
 
-        Thread.sleep(50);
         if(client.window.getPacks().get(msg.getSeq_num())) return;
 
         System.out.print("Enviando pacote "+msg.getSeq_num()+" para o servidor com mensagem "+msg.getMsg());
@@ -286,33 +193,22 @@ public class Client {
         send_serial = bStream.toByteArray();
         pack = new DatagramPacket(send_serial,
                 send_serial.length, client.addr, client.portNumber);
-        client.socket.send(pack);;
+        client.socket.send(pack);
 
         LogMessage finalMsg = msg;
         client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 if(!client.window.getPacks().get(finalMsg.getSeq_num())) {
                     System.out.println("Pacote "+ finalMsg.getSeq_num()+" nao chegou. Reenviando...");
                     try {
                         sendMessage(client, client.logs.get((int) finalMsg.getSeq_num()));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchAlgorithmException e) {
-                        e.printStackTrace();
-                    } catch (InterruptedException e) {
+                    } catch (IOException | NoSuchAlgorithmException e) {
                         e.printStackTrace();
                     }
                 }
             }
         }, client.tout*1000);
-
     }
-
 }
 

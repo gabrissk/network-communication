@@ -5,20 +5,18 @@ import java.util.*;
 public class SlidingWindow {
     private long size;
     private long ptr;
-    public HashMap<Long, Boolean> packs;
+    private HashMap<Long, Boolean> packs;
     private int totalAcks;
 
-    public SlidingWindow(int size) {
+    SlidingWindow(int size) {
         this.size = size;
         this.ptr = 0;
-        this.packs = new HashMap<>(size);
+        this.packs = new HashMap<>();
         this.totalAcks = 0;
     }
 
-    public void insert(long seq) {
+    void insert(long seq) {
         this.packs.put(seq, false);
-        /*System.out.println("insert:");
-        print();*/
     }
 
     public long getSize() {
@@ -33,14 +31,13 @@ public class SlidingWindow {
         /*System.out.println("can:");
         print();
         System.out.println(seq+" "+" "+ ptr+" "+ size);*/
-        Thread.sleep(10);
+        Thread.sleep(0,1);
         return seq >= this.ptr && seq <= this.size+this.ptr-1;
     }
 
     void update(long seq) {
         packs.put(seq, true);
-        /*print();
-        System.out.println(seq+" "+" "+ ptr+" "+ size);*/
+        //System.out.println(seq+" "+" "+ ptr+" "+ size);
         while(packs.get(ptr)) {
             ptr++;
             if(ptr >= packs.size()) {

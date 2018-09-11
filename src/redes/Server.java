@@ -17,17 +17,17 @@ public class Server {
     private DatagramSocket socket;
     private SlidingWindow window;
 
-    public Server(String[] args) throws SocketException {
+    private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
         this.window = new SlidingWindow(Integer.parseInt(args[2]));
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
     }
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
 
         if (args.length < 4) {
-            System.err.println("Usage: <file> <Port> <Wrx> <Perror>");
+            System.err.println("Uso: <arquivo> <port> <Wrx> <Perror>");
             exit(1);
         }
 
@@ -47,9 +47,9 @@ public class Server {
 
     }
 
-    public static void receive(Server server, PrintWriter outFile) throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
+    private static void receive(Server server, PrintWriter outFile) throws IOException, ClassNotFoundException,
+            NoSuchAlgorithmException, InterruptedException {
         byte[] recvData = new byte[16384];
-        //byte[] sendData = new byte[1024];
 
         long seq_num;
         Timestamp time;
@@ -82,8 +82,9 @@ public class Server {
             md5 = (String) in.readObject();
 
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
-            //System.out.println(msg.toString()+"\n");
 
+            if(server.window.getPacks().get(seq_num) == null) server.window.insert(seq_num);
+            if(!server.window.canSend(seq_num)) continue;
 
             // Faz a verificacao de erro
             if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + time.toString()
@@ -94,7 +95,6 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-
 
             /*** ENVIA ACK ***/
 
@@ -109,13 +109,14 @@ public class Server {
                 // Escreve mensagem no arquivo de saida
                 outFile.write(msg.getMsg() + "\n");
                 outFile.flush();
+                server.window.update(seq_num);
             }
             send(server, ack, pack);
         }
 
     }
 
-    public static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
+    private static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
 
         InetAddress addr = pack.getAddress();
         int portNum = pack.getPort();
