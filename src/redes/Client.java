@@ -53,6 +53,7 @@ public class Client {
         Client client = new Client(ip_port, args);
         client.timer = System.currentTimeMillis();
 
+        // Envia mensagens
         Thread t1 = new Thread(() -> {
             try {
                 start(client, args);
@@ -61,7 +62,8 @@ public class Client {
             }
         } );
 
-        Thread t2 =new Thread(() -> {
+        // Recebe ACKs
+        Thread t2 = new Thread(() -> {
             try {
                 recvAcks(client);
             } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
@@ -79,6 +81,7 @@ public class Client {
     private static synchronized void recvAcks(Client client)
             throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
 
+        // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
         while(client.totalLogs != client.window.getTotalAcks()) {
             byte[] recvData = new byte[16384];
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
@@ -92,6 +95,7 @@ public class Client {
             String md5 = (String) in.readObject();
 
             Ack ack = new Ack(seqNum, timeS, md5);
+            // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
                 client.window.update(seqNum);
                 client.window.setTotalAcks(client.window.getTotalAcks()+1);
@@ -100,7 +104,7 @@ public class Client {
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
                 LogMessage msg = client.logs.get((int)ack.getSeq_num());
-                /*** DOCUMENTAR QUE PACOTE É ENVIADO APÓS RETORNAR UM ACK CORROMPIDO ***/
+                /*** DOCUMENTAR QUE PACOTE É REENVIADO APÓS RETORNAR UM ACK CORROMPIDO ***/
                 sendMessage(client, msg);
             }
         }
@@ -119,9 +123,9 @@ public class Client {
             // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
             Instant inst = Instant.now();
 
-            while(!client.window.canSend(seq_num)){ }
-            ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-            ObjectOutput out = new ObjectOutputStream(bStream);
+            // Espera ate que o pacote esteja dentro da janela deslizante ("enviável")
+            while(!client.window.insideWindow(seq_num)){}
+
             Timestamp time = new Timestamp(inst.getEpochSecond(), inst.getNano());
             LogMessage msg = setAndGetMessage(scanner.nextLine(), seq_num, client.perror, time);
             client.logs.add(msg);
@@ -132,6 +136,7 @@ public class Client {
 
             /*** ENVIA MENSAGEM ***/
             sendMessage(client, msg);
+
             seq_num++;
 
         }
@@ -141,6 +146,7 @@ public class Client {
 
     /*** ENVIA MENSAGENS***/
     private static void sendMessage(Client client, LogMessage msg) throws IOException, NoSuchAlgorithmException {
+
         // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
         long secs = Instant.now().getEpochSecond();
         long start = System.nanoTime();
@@ -196,6 +202,7 @@ public class Client {
         client.socket.send(pack);
 
         LogMessage finalMsg = msg;
+        // Temporizador que dispara após "Tout" segundos -> caso não tenha recebido ACK do pacote, reenvia
         client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() {
             @Override
             public void run() {

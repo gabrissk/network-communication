@@ -15,29 +15,20 @@ public class SlidingWindow {
         this.totalAcks = 0;
     }
 
+    // Insere pacote na janela
     void insert(long seq) {
         this.packs.put(seq, false);
     }
 
-    public long getSize() {
-        return size;
-    }
-
-    public long getPtr() {
-        return ptr;
-    }
-
-    boolean canSend(long seq) throws InterruptedException {
-        /*System.out.println("can:");
-        print();
-        System.out.println(seq+" "+" "+ ptr+" "+ size);*/
+    // Retorna se o pacote pode ser enviado
+    public boolean insideWindow(long seq) throws InterruptedException {
         Thread.sleep(0,1);
         return seq >= this.ptr && seq <= this.size+this.ptr-1;
     }
 
-    void update(long seq) {
+    // Atualiza a janela com pacotes que ja foram confirmados
+    public void update(long seq) {
         packs.put(seq, true);
-        //System.out.println(seq+" "+" "+ ptr+" "+ size);
         while(packs.get(ptr)) {
             ptr++;
             if(ptr >= packs.size()) {
@@ -56,11 +47,6 @@ public class SlidingWindow {
 
     public int getTotalAcks() {
         return totalAcks;
-    }
-
-    public Collection<Boolean> getValues() {
-        Collection<Boolean> string = packs.values();
-        return string;
     }
 
     public void print() {

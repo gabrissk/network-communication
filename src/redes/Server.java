@@ -84,7 +84,8 @@ public class Server {
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
 
             if(server.window.getPacks().get(seq_num) == null) server.window.insert(seq_num);
-            if(!server.window.canSend(seq_num)) continue;
+            // Verifica se o pacote pode ser confirmado; caso contrario, o ignora
+            if(!server.window.insideWindow(seq_num)) continue;
 
             // Faz a verificacao de erro
             if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + time.toString()
@@ -95,8 +96,6 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-
-            /*** ENVIA ACK ***/
 
             md5 = hash(String.valueOf(seq_num) + time.toString());
             Ack ack = new Ack(seq_num, time, md5);
@@ -122,25 +121,22 @@ public class Server {
         int portNum = pack.getPort();
         byte[] sendData;
 
+        /*** ENVIA ACK ***/
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bStream);
-
         out.writeObject(ack.getSeq_num());
         sendData = bStream.toByteArray();
         DatagramPacket sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
         server.socket.send(sPack);
-
-
         out.writeObject(ack.getTime());
         sendData = bStream.toByteArray();
         sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
         server.socket.send(sPack);
-
-
         out.writeObject(ack.getMd5());
         sendData = bStream.toByteArray();
         sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
         server.socket.send(sPack);
+
         System.out.print("Enviando ack do pacote "+ack.getSeq_num());
         if(ack.isErr()) System.out.println(" (com erro)");
         else System.out.println();
