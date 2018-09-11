@@ -1,11 +1,9 @@
 package redes;
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 
 import static java.lang.System.exit;
 import static redes.Message.hash;
@@ -15,13 +13,13 @@ public class Server {
     private int portNumber;
     private double perror;
     private DatagramSocket socket;
-    private SlidingWindow window;
+    private HashMap<SocketAddress,SlidingWindow> windows;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
-        this.window = new SlidingWindow(Integer.parseInt(args[2]));
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
+        this.windows = new HashMap<>();
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
@@ -43,11 +41,11 @@ public class Server {
 
         Server server = new Server(args);
 
-        receive(server, outFile);
+        receive(server, outFile, Integer.parseInt(args[2]));
 
     }
 
-    private static void receive(Server server, PrintWriter outFile) throws IOException, ClassNotFoundException,
+    private static void receive(Server server, PrintWriter outFile, int winSize) throws IOException, ClassNotFoundException,
             NoSuchAlgorithmException, InterruptedException {
         byte[] recvData = new byte[16384];
 
@@ -57,40 +55,54 @@ public class Server {
         short size;
         String md5;
 
+        System.out.println("Esperando por datagrama UDP na porta " + server.portNumber);
+
         DatagramPacket pack = new DatagramPacket(recvData,
                 recvData.length);
-        System.out.println("Esperando por datagrama UDP na porta " + server.portNumber);
 
         while(true) {
 
             /*** RECEBE MENSAGEM ***/
-            Thread.sleep(100);
+            Thread.sleep(10);
             server.socket.receive(pack);
             ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
             seq_num = (Long) in.readObject();
 
+            Thread.sleep(10);
             server.socket.receive(pack);
             time = (Timestamp) in.readObject();
 
+            Thread.sleep(10);
             server.socket.receive(pack);
             m = (String) in.readObject();
 
+            Thread.sleep(10);
             server.socket.receive(pack);
             size = (short) in.readObject();
 
+            Thread.sleep(10);
             server.socket.receive(pack);
             md5 = (String) in.readObject();
 
             LogMessage msg = new LogMessage(seq_num, time, size, m, md5);
 
-            if(server.window.getPacks().get(seq_num) == null) server.window.insert(seq_num);
-
-            if(server.window.getPacks().get(seq_num) == true) {
-                server.window.clearWindow();
-                System.out.println("FIM DE UM CLIENTE");
+            if(!server.windows.containsKey(pack.getSocketAddress())) {
+                server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
             }
+
+            SlidingWindow window = server.windows.get(pack.getSocketAddress());
+
+            if(window.getPacks().get(seq_num) == null) {
+                window.insert(seq_num);
+                window.print();
+            }
+
             // Verifica se o pacote pode ser confirmado; caso contrario, o ignora
-            //if(!server.window.insideWindow(seq_num)) continue;
+            if(!window.insideWindow(seq_num)){
+                System.out.println(seq_num);
+                window.print();
+                continue;
+            }
 
             // Faz a verificacao de erro
             if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + time.toString()
@@ -114,9 +126,9 @@ public class Server {
                 outFile.write(msg.getMsg() + "\n");
                 outFile.flush();
                 try {
-                    server.window.update(seq_num);
+                    window.update(seq_num);
                 } catch (NullPointerException e) {
-                    server.window.print();
+                    window.print();
                 }
             }
             send(server, ack, pack);
