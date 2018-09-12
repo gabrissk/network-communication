@@ -11,10 +11,10 @@ public class LogMessage extends Message implements Serializable {
     private short size;
     private String msg;
     private String md5;
-    transient Timer timer;
+    transient Timer timer; // transiente para poder serializar LogMessage
     private boolean err;
 
-    public LogMessage(long seq_num, Timestamp time, short size, String msg, String md5) {
+    private LogMessage(long seq_num, Timestamp time, short size, String msg, String md5) {
         //super(md5);
         this.seq_num = seq_num; this.time = time; this.msg = msg; this.size = size; this.md5 = md5;
         this.timer = new Timer(); this.err = false;
@@ -60,7 +60,7 @@ public class LogMessage extends Message implements Serializable {
         this.md5 = hash;
     }
 
-    public void setErr(boolean err) {
+    private void setErr(boolean err) {
         this.err = err;
     }
 }

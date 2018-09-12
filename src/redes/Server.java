@@ -3,7 +3,7 @@ package redes;
 import java.io.*;
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
+import java.util.*;
 
 import static java.lang.System.exit;
 import static redes.Message.hash;
@@ -14,12 +14,14 @@ public class Server {
     private double perror;
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
+    private LinkedHashMap<Long, Map.Entry<String, Boolean>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
         this.windows = new HashMap<>();
+        this.logs = new LinkedHashMap<>();
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
@@ -76,7 +78,7 @@ public class Server {
 
             if(window.getPacks().get(msg.getSeq_num()) == null) {
                 window.insert(msg.getSeq_num());
-                window.print();
+                //window.print();
             }
 
             // Verifica se o pacote pode ser confirmado; caso contrario, o ignora
@@ -104,8 +106,10 @@ public class Server {
             }
             else {
                 // Escreve mensagem no arquivo de saida
-                outFile.write(msg.getMsg() + "\n");
-                outFile.flush();
+                /*outFile.write(msg.getMsg() + "\n");
+                outFile.flush();*/
+                server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
+                tryToWrite(server, window,outFile);
                 try {
                     window.update(msg.getSeq_num());
                 } catch (NullPointerException e) {
@@ -113,6 +117,18 @@ public class Server {
                 }
             }
             send(server, ack, pack);
+        }
+    }
+
+    private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
+        LinkedHashMap<Long, Map.Entry<String, Boolean>> l = server.logs;
+        for(Long i:l.keySet()) {
+            if(!window.getPacks().get(i)) break;
+            if(!l.get(i).getValue()) {
+                out.write(l.get(i).getKey() + "\n");
+                out.flush();
+                l.replace(i, Map.entry(l.get(i).getKey(), true));
+            }
         }
     }
 

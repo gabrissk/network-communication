@@ -5,7 +5,6 @@ import java.net.*;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
@@ -43,7 +42,7 @@ public class Client {
 
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
 
         if (args.length < 5) {
             System.err.println(
@@ -75,7 +74,7 @@ public class Client {
         } );
 
         t1.start();
-        Thread.sleep(1);    // Para rodar concorrentemente os metodos de envio e recebimento de pacotes
+        //Thread.sleep(1);    // Para rodar concorrentemente os metodos de envio e recebimento de pacotes
         t2.start();
 
     }
@@ -101,9 +100,9 @@ public class Client {
 
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
+                System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
                 client.window.update(ack.getSeq_num());
                 client.totalAcks++;
-                System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
@@ -123,6 +122,8 @@ public class Client {
         long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
+            String nextLog = scanner.nextLine();
+            if(nextLog == null || nextLog.equals("")) continue;
 
             // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
             Instant inst = Instant.now();
@@ -131,7 +132,7 @@ public class Client {
             while(!client.window.insideWindow(seq_num)){}
 
             Timestamp time = new Timestamp(inst.getEpochSecond(), inst.getNano());
-            LogMessage msg = setAndGetMessage(scanner.nextLine(), seq_num, client.perror, time);
+            LogMessage msg = setAndGetMessage(nextLog, seq_num, client.perror, time);
             client.logs.add(msg);
 
             /*** Insere na janela deslizante ***/
@@ -151,11 +152,7 @@ public class Client {
     /*** ENVIA MENSAGENS***/
     private static void sendMessage(Client client, LogMessage msg) throws IOException, NoSuchAlgorithmException {
 
-        // Segundos desde Epoch (1970-01-01 00:00:00 +0000 (UTC).)
-        long secs = Instant.now().getEpochSecond();
-        long start = System.nanoTime();
-        Timestamp time = new Timestamp(secs, Math.toIntExact(System.nanoTime()-start));
-        msg = setAndGetMessage(msg.getMsg(), msg.getSeq_num(), client.perror, time);
+        msg = setAndGetMessage(msg.getMsg(), msg.getSeq_num(), client.perror, msg.getTime());
 
         if(client.window.getPacks().get(msg.getSeq_num())) return;
 
