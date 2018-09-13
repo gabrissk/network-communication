@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.lang.System.exit;
 import static redes.Message.hash;
@@ -19,14 +20,16 @@ public class Server {
     private double perror;
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
-    private LinkedHashMap<Long, Map.Entry<String, Boolean>> logs;
+    //private LinkedHashMap<Long, Map.Entry<String, Boolean>> logs;
+    private TreeMap<Long, Map.Entry<String, Boolean>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
         this.windows = new HashMap<>();
-        this.logs = new LinkedHashMap<>();
+        //this.logs = new LinkedHashMap<>();
+        this.logs = new TreeMap<>();
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
@@ -110,6 +113,7 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
+            server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
             //String md5;
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
@@ -121,22 +125,23 @@ public class Server {
             }
             else {
                 // Escreve mensagem no arquivo de saida
-                outFile.write(msg.getMsg() + "\n");
-                outFile.flush();
-                //server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
-                //tryToWrite(server, window,outFile);
+                /*outFile.write(msg.getMsg() + "\n");
+                outFile.flush();*/
                 try {
                     window.update(msg.getSeq_num());
                 } catch (NullPointerException e) {
                     window.print();
                 }
+                tryToWrite(server, window,outFile);
             }
             send(server, ack, pack);
         }
     }
 
-    /*private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
-        LinkedHashMap<Long, Map.Entry<String, Boolean>> l = server.logs;
+    private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
+        TreeMap<Long, Map.Entry<String, Boolean>> l = server.logs;
+        System.out.println(l.values());
+        System.out.println(l.size());
         for(Long i:l.keySet()) {
             if (!window.getPacks().get(i)) break;
             if (!l.get(i).getValue()) {
@@ -146,7 +151,7 @@ public class Server {
             }
         }
         System.out.println(l.values());
-    }*/
+    }
 
     private static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
 
