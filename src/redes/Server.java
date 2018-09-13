@@ -2,6 +2,7 @@ package redes;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
@@ -51,6 +52,10 @@ public class Server {
             NoSuchAlgorithmException, InterruptedException {
 
         byte[] recvData = new byte[16384];
+        long seqNum;
+        Timestamp time;
+        short size;
+        String m;
         String md5;
 
         System.out.println("Esperando por datagrama UDP na porta " + server.portNumber);
@@ -63,13 +68,21 @@ public class Server {
             /*** RECEBE MENSAGEM ***/
 
             server.socket.receive(pack);
-            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            /*HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
+            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
+            //LogMessage msg = (LogMessage) in.readObject();
 
-            LogMessage msg = new LogMessage((long)l.get(0), new Timestamp((long)l.get(1),(int)l.get(2)),
-                    (short)l.get(3), (String)l.get(4), (String)l.get(5));*/
-            LogMessage msg = (LogMessage) in.readObject();
+            ByteBuffer buf = ByteBuffer.wrap(pack.getData());
+            seqNum = buf.getLong();
+            time = new Timestamp(buf.getLong(), buf.getInt());
+            size = buf.getShort();
+            byte[] aux = new byte[size];
+            buf.get(aux, 0, size);
+            m = new String(aux);
+            aux = new byte[16];
+            buf.get(aux, 0, 16);
+            md5 = new String(aux);
 
+            LogMessage msg = new LogMessage(seqNum,  time, size, m, md5);
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
             }
@@ -106,10 +119,10 @@ public class Server {
             }
             else {
                 // Escreve mensagem no arquivo de saida
-                /*outFile.write(msg.getMsg() + "\n");
-                outFile.flush();*/
+                outFile.write(msg.getMsg() + "\n");
+                outFile.flush();
                 server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
-                tryToWrite(server, window,outFile);
+                //tryToWrite(server, window,outFile);
                 try {
                     window.update(msg.getSeq_num());
                 } catch (NullPointerException e) {
@@ -136,20 +149,20 @@ public class Server {
 
         InetAddress addr = pack.getAddress();
         int portNum = pack.getPort();
-        byte[] sendData;
 
         /*** ENVIA ACK ***/
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        /*ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         ObjectOutput out = new ObjectOutputStream(bStream);
-
-        /*HashMap<Integer, Object> list = new HashMap<>();
-        list.put(0, ack.getSeq_num());
-        list.put(1, ack.getTime().getSecs());
-        list.put(2, ack.getTime().getNanos());
-        list.put(3, ack.getMd5());
-        out.writeObject(list);*/
         out.writeObject(ack);
-        sendData = bStream.toByteArray();
+        sendData = bStream.toByteArray();*/
+        ByteBuffer buf = ByteBuffer.allocate(20000);
+        buf.putLong(ack.getSeq_num());
+        buf.putLong(ack.getTime().getSecs());
+        buf.putInt(ack.getTime().getNanos());
+        buf.put(ack.getMd5().getBytes());
+
+        byte[] sendData = buf.array();
+
         DatagramPacket sPack = new DatagramPacket(sendData, sendData.length, addr, portNum);
         server.socket.send(sPack);
 

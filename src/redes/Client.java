@@ -2,6 +2,7 @@ package redes;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -85,18 +86,27 @@ public class Client {
             throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
 
         byte[] recvData = new byte[16384];
+        long seqNum;
+        Timestamp time;
+        short size;
+        String m;
+        String md5;
 
         // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
         while(client.totalLogs != client.totalAcks) {
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
             client.socket.receive(rPack);
-            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            // Transforma o objeto recebido num HashMap
-            /*HashMap<Integer, Object> l = (HashMap<Integer, Object>)in.readObject();
-            // Usa os campos do map para formar o Ack
-            Ack ack = new Ack((long)l.get(0), new Timestamp((long)l.get(1), (int)l.get(2)), (String) l.get(3));*/
-            Ack ack = (Ack)in.readObject();
+            /*ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
+            Ack ack = (Ack)in.readObject();*/
+            ByteBuffer buf = ByteBuffer.wrap(rPack.getData());
+            seqNum = buf.getLong();
+            time = new Timestamp(buf.getLong(), buf.getInt());
+            byte[] aux = new byte[16];
+            buf.get(aux, 0, 16);
+            md5 = new String(aux);
+
+            Ack ack = new Ack(seqNum, time, md5);
 
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
@@ -164,20 +174,21 @@ public class Client {
         }
         else System.out.println(".");
 
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        ObjectOutput out = new ObjectOutputStream(bStream);
+        /*ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(bStream);*/
 
-        /*HashMap<Integer, Object> list = new HashMap<>();
-        list.put(0, msg.getSeq_num());
-        list.put(1, msg.getTime().getSecs());
-        list.put(2, msg.getTime().getNanos());
-        list.put(3, msg.getSize());
-        list.put(4, msg.getMsg());
-        list.put(5, msg.getMd5());*/
+        ByteBuffer buf = ByteBuffer.allocate(20000);
+        buf.putLong(msg.getSeq_num());
+        buf.putLong(msg.getTime().getSecs());
+        buf.putInt(msg.getTime().getNanos());
+        buf.putShort(msg.getSize());
+        buf.put(msg.getMsg().getBytes());
+        buf.put(msg.getMd5().getBytes());
 
-        //out.writeObject(list);
-        out.writeObject(msg);
-        byte[] send = bStream.toByteArray();
+        byte[] send = buf.array();
+
+        /*out.writeObject(msg);
+        byte[] send = bStream.toByteArray();*/
         DatagramPacket p = new DatagramPacket(send, send.length, client.addr, client.portNumber);
         client.socket.send(p);
 
