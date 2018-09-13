@@ -1,10 +1,14 @@
 package redes;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static java.lang.System.exit;
 import static redes.Message.hash;
@@ -25,7 +29,7 @@ public class Server {
         this.logs = new LinkedHashMap<>();
     }
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, ClassNotFoundException, InterruptedException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
 
         if (args.length < 4) {
             System.err.println("Uso: <arquivo> <port> <Wrx> <Perror>");
@@ -48,7 +52,7 @@ public class Server {
     }
 
     @SuppressWarnings("unchecked")
-    private static void receive(Server server, PrintWriter outFile, int winSize) throws IOException, ClassNotFoundException,
+    private static void receive(Server server, PrintWriter outFile, int winSize) throws IOException,
             NoSuchAlgorithmException, InterruptedException {
 
         byte[] recvData = new byte[16384];
@@ -68,8 +72,6 @@ public class Server {
             /*** RECEBE MENSAGEM ***/
 
             server.socket.receive(pack);
-            //ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            //LogMessage msg = (LogMessage) in.readObject();
 
             ByteBuffer buf = ByteBuffer.wrap(pack.getData());
             seqNum = buf.getLong();
@@ -121,7 +123,7 @@ public class Server {
                 // Escreve mensagem no arquivo de saida
                 outFile.write(msg.getMsg() + "\n");
                 outFile.flush();
-                server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
+                //server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
                 //tryToWrite(server, window,outFile);
                 try {
                     window.update(msg.getSeq_num());
@@ -133,17 +135,18 @@ public class Server {
         }
     }
 
-    private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
+    /*private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
         LinkedHashMap<Long, Map.Entry<String, Boolean>> l = server.logs;
         for(Long i:l.keySet()) {
-            if(!window.getPacks().get(i)) break;
-            if(!l.get(i).getValue()) {
+            if (!window.getPacks().get(i)) break;
+            if (!l.get(i).getValue()) {
                 out.write(l.get(i).getKey() + "\n");
                 out.flush();
                 l.replace(i, Map.entry(l.get(i).getKey(), true));
             }
         }
-    }
+        System.out.println(l.values());
+    }*/
 
     private static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
 
@@ -151,10 +154,7 @@ public class Server {
         int portNum = pack.getPort();
 
         /*** ENVIA ACK ***/
-        /*ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        ObjectOutput out = new ObjectOutputStream(bStream);
-        out.writeObject(ack);
-        sendData = bStream.toByteArray();*/
+
         ByteBuffer buf = ByteBuffer.allocate(20000);
         buf.putLong(ack.getSeq_num());
         buf.putLong(ack.getTime().getSecs());

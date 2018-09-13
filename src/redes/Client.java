@@ -69,7 +69,7 @@ public class Client {
         Thread t2 = new Thread(() -> {
             try {
                 recvAcks(client);
-            } catch (IOException | NoSuchAlgorithmException | ClassNotFoundException e) {
+            } catch (IOException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
             }
         } );
@@ -83,13 +83,11 @@ public class Client {
     /*** RECEBE ACKs ***/
     @SuppressWarnings("unchecked")
     private static synchronized void recvAcks(Client client)
-            throws IOException, ClassNotFoundException, NoSuchAlgorithmException {
+            throws IOException, NoSuchAlgorithmException {
 
         byte[] recvData = new byte[16384];
         long seqNum;
         Timestamp time;
-        short size;
-        String m;
         String md5;
 
         // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
@@ -97,8 +95,7 @@ public class Client {
             DatagramPacket rPack = new DatagramPacket(recvData, recvData.length);
 
             client.socket.receive(rPack);
-            /*ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(recvData));
-            Ack ack = (Ack)in.readObject();*/
+
             ByteBuffer buf = ByteBuffer.wrap(rPack.getData());
             seqNum = buf.getLong();
             time = new Timestamp(buf.getLong(), buf.getInt());
@@ -174,9 +171,6 @@ public class Client {
         }
         else System.out.println(".");
 
-        /*ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        ObjectOutput out = new ObjectOutputStream(bStream);*/
-
         ByteBuffer buf = ByteBuffer.allocate(20000);
         buf.putLong(msg.getSeq_num());
         buf.putLong(msg.getTime().getSecs());
@@ -187,8 +181,6 @@ public class Client {
 
         byte[] send = buf.array();
 
-        /*out.writeObject(msg);
-        byte[] send = bStream.toByteArray();*/
         DatagramPacket p = new DatagramPacket(send, send.length, client.addr, client.portNumber);
         client.socket.send(p);
 
