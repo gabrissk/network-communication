@@ -144,8 +144,6 @@ public class Server {
     }
 
     private static void tryToWrite(SocketAddress s, TreeMap<Long, Map.Entry<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
-        System.out.println(t.values());
-        System.out.println(t.size());
         for(Long i:t.keySet()) {
             if (!window.getPacks().get(i)) break;
             if (!t.get(i).getValue()) {
@@ -181,10 +179,10 @@ public class Server {
     }
 
     static void updateLogs(TreeMap<Long, Map.Entry<String, Boolean>> t, long seqNum, String msg) {
-        for(int i =0; i< (int) seqNum; i++) {
+        for(int i =0; i<= (int) seqNum; i++) {
             if(!t.containsKey((long)i))
                 t.put((long)i, Map.entry("", false));
         }
-        t.put(seqNum, Map.entry(msg, false));
+        //t.put(seqNum, Map.entry(msg, false));
     }
 }

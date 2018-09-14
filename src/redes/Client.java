@@ -108,8 +108,10 @@ public class Client {
             // Verificacao de erro
             if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
-                client.window.update(ack.getSeq_num());
-                client.totalAcks++;
+                if(!client.window.getPacks().get(ack.getSeq_num())) {
+                    client.window.update(ack.getSeq_num());
+                    client.totalAcks++;
+                }
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
@@ -119,7 +121,7 @@ public class Client {
             }
         }
         System.out.printf("\n%d %d %d %.3f", client.totalLogs, client.sent, client.corrupted, (double)(System.currentTimeMillis()-client.timer)/1000);
-        client.socket.close();
+        //client.socket.close();
         System.exit(0);
     }
 
@@ -153,6 +155,7 @@ public class Client {
 
         }
         client.totalLogs = (int)seq_num;
+        Thread.currentThread().interrupt();
 
     }
 
@@ -198,7 +201,7 @@ public class Client {
                     }
                 }
             }
-        }, client.tout*1000);
+        }, client.tout);
     }
 }
 
