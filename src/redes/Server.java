@@ -19,16 +19,16 @@ public class Server {
     private double perror;
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
-    //private LinkedHashMap<Long, Map.Entry<String, Boolean>> logs;
-    private TreeMap<Long, Map.Entry<String, Boolean>> logs;
+    private HashMap<SocketAddress, TreeMap<Long, Map.Entry<String, Boolean>>> logs;
+    //private TreeMap<Long, Map.Entry<String, Boolean>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
         this.windows = new HashMap<>();
-        //this.logs = new LinkedHashMap<>();
-        this.logs = new TreeMap<>();
+        //this.logs = new TreeMap<>();
+        this.logs = new HashMap<>();
     }
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException, InterruptedException {
@@ -87,14 +87,16 @@ public class Server {
             md5 = new String(aux);
 
             LogMessage msg = new LogMessage(seqNum,  time, size, m, md5);
-            System.out.println(pack.getSocketAddress());
+            //System.out.println(pack.getSocketAddress());
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
+                server.logs.put(pack.getSocketAddress(), new TreeMap<>());
             }
 
-            updateLogs(server.logs, msg.getSeq_num(), msg.getMsg());
 
             SlidingWindow window = server.windows.get(pack.getSocketAddress());
+            TreeMap<Long, Map.Entry<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
+            updateLogs(t, msg.getSeq_num(), msg.getMsg());
 
             if(window.getPacks().get(msg.getSeq_num()) == null) {
                 window.insert(msg.getSeq_num());
@@ -115,7 +117,7 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-            server.logs.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
+            t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
             //String md5;
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
@@ -134,26 +136,25 @@ public class Server {
                 } catch (NullPointerException e) {
                     window.print();
                 }
-                tryToWrite(server, window,outFile);
+                tryToWrite(pack.getSocketAddress(), t, window,outFile);
 
             }
             send(server, ack, pack);
         }
     }
 
-    private static void tryToWrite(Server server, SlidingWindow window, PrintWriter out) {
-        TreeMap<Long, Map.Entry<String, Boolean>> l = server.logs;
-        System.out.println(l.values());
-        System.out.println(l.size());
-        for(Long i:l.keySet()) {
+    private static void tryToWrite(SocketAddress s, TreeMap<Long, Map.Entry<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
+        System.out.println(t.values());
+        System.out.println(t.size());
+        for(Long i:t.keySet()) {
             if (!window.getPacks().get(i)) break;
-            if (!l.get(i).getValue()) {
-                out.write(l.get(i).getKey() + "\n");
+            if (!t.get(i).getValue()) {
+                out.write(t.get(i).getKey()+" "+s+ "\n");
                 out.flush();
-                l.replace(i, Map.entry(l.get(i).getKey(), true));
+                t.replace(i, Map.entry(t.get(i).getKey(), true));
             }
         }
-        System.out.println(l.values());
+        //System.out.println(t.values());
     }
 
     private static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
