@@ -7,7 +7,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -88,9 +87,12 @@ public class Server {
             md5 = new String(aux);
 
             LogMessage msg = new LogMessage(seqNum,  time, size, m, md5);
+            System.out.println(pack.getSocketAddress());
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
             }
+
+            updateLogs(server.logs, msg.getSeq_num(), msg.getMsg());
 
             SlidingWindow window = server.windows.get(pack.getSocketAddress());
 
@@ -133,6 +135,7 @@ public class Server {
                     window.print();
                 }
                 tryToWrite(server, window,outFile);
+
             }
             send(server, ack, pack);
         }
@@ -174,5 +177,13 @@ public class Server {
         System.out.print("Enviando ack do pacote "+ack.getSeq_num());
         if(ack.isErr()) System.out.println(" (com erro)");
         else System.out.println();
+    }
+
+    static void updateLogs(TreeMap<Long, Map.Entry<String, Boolean>> t, long seqNum, String msg) {
+        for(int i =0; i< (int) seqNum; i++) {
+            if(!t.containsKey((long)i))
+                t.put((long)i, Map.entry("", false));
+        }
+        t.put(seqNum, Map.entry(msg, false));
     }
 }
