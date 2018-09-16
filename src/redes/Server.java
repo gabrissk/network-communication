@@ -82,11 +82,15 @@ public class Server {
             byte[] aux = new byte[size];
             buf.get(aux, 0, size);
             m = new String(aux);
+            /*aux = new byte[16];
+            buf.get(aux, 0, 16);
+            md5 = new String(aux);*/
             aux = new byte[16];
             buf.get(aux, 0, 16);
-            md5 = new String(aux);
+            //System.out.println("recebido: "+ Arrays.toString(aux));
 
-            LogMessage msg = new LogMessage(seqNum,  time, size, m, md5);
+            LogMessage msg = new LogMessage(seqNum,  time, size, m);//, md5);
+            //System.out.println("real: "+ Arrays.toString(msg.getnMd5())+ " iguais: "+checkMd5(aux, msg.getnMd5()));
             //System.out.println(pack.getSocketAddress());
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
@@ -109,8 +113,13 @@ public class Server {
             }
 
             // Faz a verificacao de erro
-            if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + msg.getTime().toString()
+            /*if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + msg.getTime().toString()
                     + String.valueOf((msg.getSize()) + msg.getMsg()), msg.getMd5()))) {
+                System.out.println("Falha na verificacao da mensagem " + msg.getSeq_num() +
+                        ". Descartando mensagem...");
+                continue;
+            }*/
+            if (!Message.checkMd5(aux, msg.getnMd5())) {
                 System.out.println("Falha na verificacao da mensagem " + msg.getSeq_num() +
                         ". Descartando mensagem...");
                 continue;
@@ -121,10 +130,11 @@ public class Server {
 
             //String md5;
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
-            Ack ack = new Ack(msg.getSeq_num(), msg.getTime(), md5);
+            Ack ack = new Ack(msg.getSeq_num(), msg.getTime());//, md5);
             double rdm = Math.random();
             if (rdm < server.perror) {
                 ack.setMd5(hash(md5));
+                ack.nMd5[2] +=1;
                 ack.setErr(true);
             }
             else {
@@ -134,7 +144,9 @@ public class Server {
                 try {
                     window.update(msg.getSeq_num());
                 } catch (NullPointerException e) {
+                    System.out.println("Erro ao atualizar janela.");
                     window.print();
+                    exit(1);
                 }
                 tryToWrite(pack.getSocketAddress(), t, window,outFile);
 
@@ -166,7 +178,8 @@ public class Server {
         buf.putLong(ack.getSeq_num());
         buf.putLong(ack.getTime().getSecs());
         buf.putInt(ack.getTime().getNanos());
-        buf.put(ack.getMd5().getBytes());
+        //buf.put(ack.getMd5().getBytes());
+        buf.put(ack.getnMd5());
 
         byte[] sendData = buf.array();
 

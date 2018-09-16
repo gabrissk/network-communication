@@ -1,6 +1,7 @@
 package redes;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
@@ -101,12 +102,21 @@ public class Client {
             time = new Timestamp(buf.getLong(), buf.getInt());
             byte[] aux = new byte[16];
             buf.get(aux, 0, 16);
-            md5 = new String(aux);
+            /*md5 = new String(aux);
+            aux = new byte[16];
+            buf.get(aux, 0, 16);*/
 
-            Ack ack = new Ack(seqNum, time, md5);
+            Ack ack = new Ack(seqNum, time);//, md5);
 
             // Verificacao de erro
-            if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
+            /*if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
+                System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
+                if(!client.window.getPacks().get(ack.getSeq_num())) {
+                    client.window.update(ack.getSeq_num());
+                    client.totalAcks++;
+                }
+            }*/
+            if(checkMd5(aux, ack.getnMd5())) {
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
                 if(!client.window.getPacks().get(ack.getSeq_num())) {
                     client.window.update(ack.getSeq_num());
@@ -174,13 +184,14 @@ public class Client {
         }
         else System.out.println(".");
 
-        ByteBuffer buf = ByteBuffer.allocate(20000);
+        ByteBuffer buf = ByteBuffer.allocate(60000);
         buf.putLong(msg.getSeq_num());
         buf.putLong(msg.getTime().getSecs());
         buf.putInt(msg.getTime().getNanos());
         buf.putShort(msg.getSize());
         buf.put(msg.getMsg().getBytes());
-        buf.put(msg.getMd5().getBytes());
+        //buf.put(msg.getMd5().getBytes());
+        buf.put(msg.getnMd5());
 
         byte[] send = buf.array();
 

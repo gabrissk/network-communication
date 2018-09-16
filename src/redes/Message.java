@@ -3,6 +3,7 @@ package redes;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 public abstract class Message {
 
@@ -22,8 +23,17 @@ public abstract class Message {
         return new BigInteger(1,message.digest()).toString(16).substring(0,16);
     }
 
+    protected static byte[] hash(byte[] bytes) throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance("MD5").digest(bytes);
+    }
+
     protected static boolean checkMd5(String a, String b) throws NoSuchAlgorithmException {
         return hash(a).equals(b);
     }
+
+    protected static boolean checkMd5(byte[] a, byte[] b) throws NoSuchAlgorithmException {
+        return Arrays.equals(a, b);
+    }
+
 
 }
