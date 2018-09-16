@@ -6,11 +6,13 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 import static java.lang.System.exit;
+import static redes.Message.checkMd5;
 import static redes.Message.hash;
 
 public class Server {
@@ -119,7 +121,7 @@ public class Server {
                         ". Descartando mensagem...");
                 continue;
             }*/
-            if (!Message.checkMd5(aux, msg.getnMd5())) {
+            if (!checkMd5(aux, msg.getnMd5())) {
                 System.out.println("Falha na verificacao da mensagem " + msg.getSeq_num() +
                         ". Descartando mensagem...");
                 continue;
@@ -192,6 +194,7 @@ public class Server {
     }
 
     static void updateLogs(TreeMap<Long, Map.Entry<String, Boolean>> t, long seqNum, String msg) {
+        // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
         for(int i =0; i<= (int) seqNum; i++) {
             if(!t.containsKey((long)i))
                 t.put((long)i, Map.entry("", false));

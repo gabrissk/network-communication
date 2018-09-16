@@ -14,7 +14,7 @@ public class LogMessage extends Message implements Serializable {
     private String md5;
     transient Timer timer; // transiente para poder serializar LogMessage
     private boolean err;
-    byte[] nMd5;
+    private byte[] nMd5;
 
     public LogMessage(long seq_num, Timestamp time, short size, String msg/*, String md5*/) throws NoSuchAlgorithmException {
         //super(md5);

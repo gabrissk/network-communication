@@ -9,7 +9,7 @@ public class SlidingWindow {
 
     SlidingWindow(int size) {
         this.size = size;
-        this.ptr = 0;
+        this.ptr = 0;  // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
         this.packs = new HashMap<>();
     }
 
@@ -46,7 +46,7 @@ public class SlidingWindow {
 
     public void print() {
         HashMap<Long, Boolean> pc = this.packs;
-        for(long i = 0; i< pc.size(); i++) {
+        for(long i = 0; i< pc.size(); i++) { // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
             System.out.print(i+":"+pc.get(i)+" ");
         }
         System.out.println();

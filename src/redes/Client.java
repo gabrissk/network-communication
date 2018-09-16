@@ -125,7 +125,7 @@ public class Client {
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
-                LogMessage msg = client.logs.get((int)ack.getSeq_num());
+                LogMessage msg = client.logs.get((int)ack.getSeq_num()); // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
                 /*** DOCUMENTAR QUE PACOTE É REENVIADO APÓS RETORNAR UM ACK CORROMPIDO ***/
                 sendMessage(client, msg);
             }
@@ -138,7 +138,7 @@ public class Client {
     private static void start(Client client, String[] args)
             throws IOException, NoSuchAlgorithmException, InterruptedException {
 
-        long seq_num = 0;
+        long seq_num = 0; // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
             String nextLog = scanner.nextLine();
@@ -164,7 +164,7 @@ public class Client {
             seq_num++;
 
         }
-        client.totalLogs = (int)seq_num;
+        client.totalLogs = (int)seq_num; // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
         Thread.currentThread().interrupt();
 
     }
@@ -200,13 +200,13 @@ public class Client {
 
         LogMessage finalMsg = msg;
         // Temporizador que dispara após "Tout" segundos -> caso não tenha recebido ACK do pacote, reenvia
-        client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() {
+        client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() { // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
             @Override
             public void run() {
                 if(!client.window.getPacks().get(finalMsg.getSeq_num())) {
                     System.out.println("Pacote "+ finalMsg.getSeq_num()+" nao chegou. Reenviando...");
                     try {
-                        sendMessage(client, client.logs.get((int) finalMsg.getSeq_num()));
+                        sendMessage(client, client.logs.get((int) finalMsg.getSeq_num())); // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
                     } catch (IOException | NoSuchAlgorithmException e) {
                         e.printStackTrace();
                     }
