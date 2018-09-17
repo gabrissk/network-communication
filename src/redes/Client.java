@@ -75,8 +75,7 @@ public class Client {
             }
         } );
 
-        t1.start();
-        //Thread.sleep(1);    // Para rodar concorrentemente os metodos de envio e recebimento de pacotes
+        t1.start(); // Para rodar concorrentemente os metodos de envio e recebimento de pacotes
         t2.start();
 
     }
@@ -89,7 +88,6 @@ public class Client {
         byte[] recvData = new byte[16384];
         long seqNum;
         Timestamp time;
-        String md5;
 
         // Condicao de parada: numero de acks recebidos for igual ao numero de logs lidos
         while(client.totalLogs != client.totalAcks) {
@@ -102,20 +100,10 @@ public class Client {
             time = new Timestamp(buf.getLong(), buf.getInt());
             byte[] aux = new byte[16];
             buf.get(aux, 0, 16);
-            /*md5 = new String(aux);
-            aux = new byte[16];
-            buf.get(aux, 0, 16);*/
 
             Ack ack = new Ack(seqNum, time);//, md5);
 
             // Verificacao de erro
-            /*if(checkMd5(String.valueOf(ack.getSeq_num()) + ack.getTime().toString(), ack.getMd5())) {
-                System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
-                if(!client.window.getPacks().get(ack.getSeq_num())) {
-                    client.window.update(ack.getSeq_num());
-                    client.totalAcks++;
-                }
-            }*/
             if(checkMd5(aux, ack.getnMd5())) {
                 System.out.println("Recebido pacote "+ack.getSeq_num()+" no cliente com sucesso!");
                 if(!client.window.getPacks().get(ack.getSeq_num())) {
@@ -131,7 +119,6 @@ public class Client {
             }
         }
         System.out.printf("\n%d %d %d %.3f", client.totalLogs, client.sent, client.corrupted, (double)(System.currentTimeMillis()-client.timer)/1000);
-        //client.socket.close();
         System.exit(0);
     }
 
@@ -190,7 +177,6 @@ public class Client {
         buf.putInt(msg.getTime().getNanos());
         buf.putShort(msg.getSize());
         buf.put(msg.getMsg().getBytes());
-        //buf.put(msg.getMd5().getBytes());
         buf.put(msg.getnMd5());
 
         byte[] send = buf.array();

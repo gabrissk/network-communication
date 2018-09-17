@@ -7,9 +7,6 @@ import java.util.Arrays;
 
 public abstract class Message {
 
-    //protected static long seq_num = 0;
-   // protected String md5;
-
     public Message(){}
 
 
@@ -23,6 +20,7 @@ public abstract class Message {
         return new BigInteger(1,message.digest()).toString(16).substring(0,16);
     }
 
+    // Retorna o hash com algoritmo MD5
     protected static byte[] hash(byte[] bytes) throws NoSuchAlgorithmException {
         return MessageDigest.getInstance("MD5").digest(bytes);
     }

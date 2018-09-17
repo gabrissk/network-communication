@@ -6,7 +6,6 @@ import java.io.PrintWriter;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -22,14 +21,12 @@ public class Server {
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
     private HashMap<SocketAddress, TreeMap<Long, Map.Entry<String, Boolean>>> logs;
-    //private TreeMap<Long, Map.Entry<String, Boolean>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
         this.perror = Double.parseDouble(args[3]);
         this.socket = new DatagramSocket(this.portNumber);
         this.windows = new HashMap<>();
-        //this.logs = new TreeMap<>();
         this.logs = new HashMap<>();
     }
 
@@ -84,16 +81,11 @@ public class Server {
             byte[] aux = new byte[size];
             buf.get(aux, 0, size);
             m = new String(aux);
-            /*aux = new byte[16];
-            buf.get(aux, 0, 16);
-            md5 = new String(aux);*/
             aux = new byte[16];
             buf.get(aux, 0, 16);
-            //System.out.println("recebido: "+ Arrays.toString(aux));
 
             LogMessage msg = new LogMessage(seqNum,  time, size, m);//, md5);
-            //System.out.println("real: "+ Arrays.toString(msg.getnMd5())+ " iguais: "+checkMd5(aux, msg.getnMd5()));
-            //System.out.println(pack.getSocketAddress());
+
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
                 server.logs.put(pack.getSocketAddress(), new TreeMap<>());
@@ -106,21 +98,16 @@ public class Server {
 
             if(window.getPacks().get(msg.getSeq_num()) == null) {
                 window.insert(msg.getSeq_num());
-                //window.print();
             }
 
             // Verifica se o pacote pode ser confirmado; caso contrario, o ignora
             if(!window.insideWindow(msg.getSeq_num())){
+                System.out.println("Pacote "+msg.getSeq_num()+
+                        " chegou no servidor fora do intervalo da janela. Descartando...");
                 continue;
             }
 
             // Faz a verificacao de erro
-            /*if (!(Message.checkMd5(String.valueOf(msg.getSeq_num()) + msg.getTime().toString()
-                    + String.valueOf((msg.getSize()) + msg.getMsg()), msg.getMd5()))) {
-                System.out.println("Falha na verificacao da mensagem " + msg.getSeq_num() +
-                        ". Descartando mensagem...");
-                continue;
-            }*/
             if (!checkMd5(aux, msg.getnMd5())) {
                 System.out.println("Falha na verificacao da mensagem " + msg.getSeq_num() +
                         ". Descartando mensagem...");
@@ -130,7 +117,6 @@ public class Server {
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
             t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
-            //String md5;
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
             Ack ack = new Ack(msg.getSeq_num(), msg.getTime());//, md5);
             double rdm = Math.random();
@@ -140,9 +126,6 @@ public class Server {
                 ack.setErr(true);
             }
             else {
-                // Escreve mensagem no arquivo de saida
-                /*outFile.write(msg.getMsg() + "\n");
-                outFile.flush();*/
                 try {
                     window.update(msg.getSeq_num());
                 } catch (NullPointerException e) {
@@ -150,6 +133,7 @@ public class Server {
                     window.print();
                     exit(1);
                 }
+                // Escreve mensagens pendentes no arquivo de saida
                 tryToWrite(pack.getSocketAddress(), t, window,outFile);
 
             }
@@ -166,7 +150,6 @@ public class Server {
                 t.replace(i, Map.entry(t.get(i).getKey(), true));
             }
         }
-        //System.out.println(t.values());
     }
 
     private static void send(Server server, Ack ack, DatagramPacket pack) throws IOException {
@@ -180,7 +163,6 @@ public class Server {
         buf.putLong(ack.getSeq_num());
         buf.putLong(ack.getTime().getSecs());
         buf.putInt(ack.getTime().getNanos());
-        //buf.put(ack.getMd5().getBytes());
         buf.put(ack.getnMd5());
 
         byte[] sendData = buf.array();
@@ -199,6 +181,5 @@ public class Server {
             if(!t.containsKey((long)i))
                 t.put((long)i, Map.entry("", false));
         }
-        //t.put(seqNum, Map.entry(msg, false));
     }
 }

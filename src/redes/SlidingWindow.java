@@ -1,6 +1,6 @@
 package redes;
 
-import java.util.*;
+import java.util.HashMap;
 
 public class SlidingWindow {
     private long size;
@@ -38,11 +38,6 @@ public class SlidingWindow {
     public HashMap<Long, Boolean> getPacks() {
         return packs;
     }
-
-    /*public void clearWindow() {
-        this.ptr = 0;
-        this.packs = new HashMap<>();
-    }*/
 
     public void print() {
         HashMap<Long, Boolean> pc = this.packs;
