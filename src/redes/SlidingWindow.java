@@ -27,7 +27,7 @@ public class SlidingWindow {
     // Atualiza a janela com pacotes que ja foram confirmados
     public void update(long seq) {
         packs.put(seq, true);
-        while(packs.get(ptr)) {
+        while(packs.containsKey(ptr) && packs.get(ptr)) {
             ptr++;
             if(ptr >= packs.size()) {
                 break;

@@ -18,7 +18,8 @@ public class Client {
 
     private InetAddress addr;
     private  int portNumber;
-    private int tout;
+    //private int tout;
+    private double tout;
     private double perror;
     private SlidingWindow window;
     private DatagramSocket socket;
@@ -33,7 +34,8 @@ public class Client {
         this.addr = InetAddress .getByName(ip_port[0]);
         this.portNumber = Integer.parseInt(ip_port[1]);
         this.window = new SlidingWindow(Integer.parseInt(args[2]));
-        this.tout = Integer.parseInt(args[3]);
+        //this.tout = Integer.parseInt(args[3]);
+        this.tout = Double.parseDouble(args[3]);
         this.perror = Double.parseDouble(args[4]);
         this.socket = new DatagramSocket();
         this.logs = new ArrayList<>();
@@ -198,7 +200,7 @@ public class Client {
                     }
                 }
             }
-        }, client.tout);
+        }, new Double(client.tout*1000).longValue());
     }
 }
 

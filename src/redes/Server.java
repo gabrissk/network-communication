@@ -1,5 +1,7 @@
 package redes;
 
+import javafx.util.Pair;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,7 +22,7 @@ public class Server {
     private double perror;
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
-    private HashMap<SocketAddress, TreeMap<Long, Map.Entry<String, Boolean>>> logs;
+    private HashMap<SocketAddress, TreeMap<Long, Pair<String, Boolean>>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
@@ -93,10 +95,11 @@ public class Server {
 
 
             SlidingWindow window = server.windows.get(pack.getSocketAddress());
-            TreeMap<Long, Map.Entry<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
+            TreeMap<Long, Pair<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
             updateLogs(t, msg.getSeq_num(), msg.getMsg());
 
-            if(window.getPacks().get(msg.getSeq_num()) == null) {
+            //if(window.getPacks().get(msg.getSeq_num()) == null) {
+            if(!window.getPacks().containsKey(msg.getSeq_num())) {
                 window.insert(msg.getSeq_num());
             }
 
@@ -115,7 +118,7 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-            t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
+            t.put(msg.getSeq_num(), new Pair(msg.getMsg(), false));
 
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
             Ack ack = new Ack(msg.getSeq_num(), msg.getTime());//, md5);
@@ -131,7 +134,9 @@ public class Server {
                 } catch (NullPointerException e) {
                     System.out.println("Erro ao atualizar janela.");
                     window.print();
+                    e.printStackTrace();
                     exit(1);
+
                 }
                 // Escreve mensagens pendentes no arquivo de saida
                 tryToWrite(pack.getSocketAddress(), t, window,outFile);
@@ -141,13 +146,13 @@ public class Server {
         }
     }
 
-    private static void tryToWrite(SocketAddress s, TreeMap<Long, Map.Entry<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
+    private synchronized static void tryToWrite(SocketAddress s, TreeMap<Long, Pair<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
         for(Long i:t.keySet()) {
-            if (!window.getPacks().get(i)) break;
+            if (!window.getPacks().containsKey(i) || !window.getPacks().get(i)) break;
             if (!t.get(i).getValue()) {
                 out.write(t.get(i).getKey()+" "+s+ "\n");
                 out.flush();
-                t.replace(i, Map.entry(t.get(i).getKey(), true));
+                t.replace(i, new Pair(t.get(i).getKey(), true));
             }
         }
     }
@@ -175,11 +180,11 @@ public class Server {
         else System.out.println();
     }
 
-    static void updateLogs(TreeMap<Long, Map.Entry<String, Boolean>> t, long seqNum, String msg) {
+    static void updateLogs(TreeMap<Long, Pair<String, Boolean>> t, long seqNum, String msg) {
         // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
         for(int i =0; i<= (int) seqNum; i++) {
             if(!t.containsKey((long)i))
-                t.put((long)i, Map.entry("", false));
+                t.put((long)i, new Pair("", false));
         }
     }
 }
