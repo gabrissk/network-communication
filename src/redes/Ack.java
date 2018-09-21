@@ -12,8 +12,8 @@ public class Ack extends Message implements Serializable {
     private  boolean err;
     byte[] nMd5;
 
-    public Ack(long seq_num, Timestamp time/*, String md5*/) throws NoSuchAlgorithmException {
-        this.seq_num = seq_num; this.time = time; //this.md5 = md5;
+    public Ack(long seq_num, Timestamp time) throws NoSuchAlgorithmException {
+        this.seq_num = seq_num; this.time = time;
         this.err = false;
         this.nMd5 = generateHash();
     }
@@ -21,8 +21,6 @@ public class Ack extends Message implements Serializable {
     public long getSeq_num() { return seq_num; }
 
     public Timestamp getTime() { return time; }
-
-    public String getMd5() { return this.md5; }
 
     public void setMd5(String hash) {
         this.md5 = hash;

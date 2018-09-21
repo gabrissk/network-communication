@@ -9,7 +9,6 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.TreeMap;
 
 import static java.lang.System.exit;
@@ -96,9 +95,8 @@ public class Server {
 
             SlidingWindow window = server.windows.get(pack.getSocketAddress());
             TreeMap<Long, Pair<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
-            updateLogs(t, msg.getSeq_num(), msg.getMsg());
+            updateLogs(t, msg.getSeq_num());
 
-            //if(window.getPacks().get(msg.getSeq_num()) == null) {
             if(!window.getPacks().containsKey(msg.getSeq_num())) {
                 window.insert(msg.getSeq_num());
             }
@@ -139,18 +137,19 @@ public class Server {
 
                 }
                 // Escreve mensagens pendentes no arquivo de saida
-                tryToWrite(pack.getSocketAddress(), t, window,outFile);
+                tryToWrite(t, window,outFile);
 
             }
             send(server, ack, pack);
         }
     }
 
-    private synchronized static void tryToWrite(SocketAddress s, TreeMap<Long, Pair<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
+    @SuppressWarnings("unchecked")
+    private synchronized static void tryToWrite(TreeMap<Long, Pair<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
         for(Long i:t.keySet()) {
             if (!window.getPacks().containsKey(i) || !window.getPacks().get(i)) break;
             if (!t.get(i).getValue()) {
-                out.write(t.get(i).getKey()+" "+s+ "\n");
+                out.write(t.get(i).getKey()+"\n");
                 out.flush();
                 t.replace(i, new Pair(t.get(i).getKey(), true));
             }
@@ -180,8 +179,8 @@ public class Server {
         else System.out.println();
     }
 
-    static void updateLogs(TreeMap<Long, Pair<String, Boolean>> t, long seqNum, String msg) {
-        // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
+    @SuppressWarnings("unchecked")
+    private static void updateLogs(TreeMap<Long, Pair<String, Boolean>> t, long seqNum) {
         for(int i =0; i<= (int) seqNum; i++) {
             if(!t.containsKey((long)i))
                 t.put((long)i, new Pair("", false));

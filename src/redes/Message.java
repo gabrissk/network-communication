@@ -29,7 +29,7 @@ public abstract class Message {
         return hash(a).equals(b);
     }
 
-    protected static boolean checkMd5(byte[] a, byte[] b) throws NoSuchAlgorithmException {
+    protected static boolean checkMd5(byte[] a, byte[] b) {
         return Arrays.equals(a, b);
     }
 

@@ -115,7 +115,7 @@ public class Client {
             }
             else {
                 System.out.println("Pacote "+ack.getSeq_num()+" chegou com erro. Reenviando...");
-                LogMessage msg = client.logs.get((int)ack.getSeq_num()); // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
+                LogMessage msg = client.logs.get((int)ack.getSeq_num());
                 /*** DOCUMENTAR QUE PACOTE É REENVIADO APÓS RETORNAR UM ACK CORROMPIDO ***/
                 sendMessage(client, msg);
             }
@@ -127,7 +127,7 @@ public class Client {
     private static void start(Client client, String[] args)
             throws IOException, NoSuchAlgorithmException, InterruptedException {
 
-        long seq_num = 0; // MUDAR PRA 1 CASO SEQNUM COMECE POR 1
+        long seq_num = 0;
         Scanner scanner = new Scanner(new File(args[0]));
         while (scanner.hasNextLine()) {
             String nextLog = scanner.nextLine();
@@ -153,7 +153,7 @@ public class Client {
             seq_num++;
 
         }
-        client.totalLogs = (int)seq_num; // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
+        client.totalLogs = (int)seq_num;
         Thread.currentThread().interrupt();
 
     }
@@ -188,13 +188,13 @@ public class Client {
 
         LogMessage finalMsg = msg;
         // Temporizador que dispara após "Tout" segundos -> caso não tenha recebido ACK do pacote, reenvia
-        client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() { // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
+        client.logs.get((int)finalMsg.getSeq_num()).timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 if(!client.window.getPacks().get(finalMsg.getSeq_num())) {
                     System.out.println("Pacote "+ finalMsg.getSeq_num()+" nao chegou. Reenviando...");
                     try {
-                        sendMessage(client, client.logs.get((int) finalMsg.getSeq_num())); // MUDAR PRA -1 CASO SEQNUM COMECE POR 1
+                        sendMessage(client, client.logs.get((int) finalMsg.getSeq_num()));
                     } catch (IOException | NoSuchAlgorithmException e) {
                         e.printStackTrace();
                     }
