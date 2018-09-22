@@ -1,7 +1,5 @@
 package redes;
 
-import javafx.util.Pair;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -9,6 +7,7 @@ import java.net.*;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeMap;
 
 import static java.lang.System.exit;
@@ -21,7 +20,7 @@ public class Server {
     private double perror;
     private DatagramSocket socket;
     private HashMap<SocketAddress,SlidingWindow> windows;
-    private HashMap<SocketAddress, TreeMap<Long, Pair<String, Boolean>>> logs;
+    private HashMap<SocketAddress, TreeMap<Long, Map.Entry<String, Boolean>>> logs;
 
     private Server(String[] args) throws SocketException {
         this.portNumber = Integer.parseInt(args[1]);
@@ -94,7 +93,7 @@ public class Server {
 
 
             SlidingWindow window = server.windows.get(pack.getSocketAddress());
-            TreeMap<Long, Pair<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
+            TreeMap<Long, Map.Entry<String, Boolean>> t = server.logs.get(pack.getSocketAddress());
             updateLogs(t, msg.getSeq_num());
 
             if(!window.getPacks().containsKey(msg.getSeq_num())) {
@@ -116,7 +115,7 @@ public class Server {
             }
 
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
-            t.put(msg.getSeq_num(), new Pair(msg.getMsg(), false));
+            t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
             Ack ack = new Ack(msg.getSeq_num(), msg.getTime());//, md5);
@@ -145,13 +144,13 @@ public class Server {
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized static void tryToWrite(TreeMap<Long, Pair<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
+    private synchronized static void tryToWrite(TreeMap<Long, Map.Entry<String, Boolean>> t, SlidingWindow window, PrintWriter out) {
         for(Long i:t.keySet()) {
             if (!window.getPacks().containsKey(i) || !window.getPacks().get(i)) break;
             if (!t.get(i).getValue()) {
                 out.write(t.get(i).getKey()+"\n");
                 out.flush();
-                t.replace(i, new Pair(t.get(i).getKey(), true));
+                t.replace(i, Map.entry(t.get(i).getKey(), true));
             }
         }
     }
@@ -180,10 +179,10 @@ public class Server {
     }
 
     @SuppressWarnings("unchecked")
-    private static void updateLogs(TreeMap<Long, Pair<String, Boolean>> t, long seqNum) {
+    private static void updateLogs(TreeMap<Long, Map.Entry<String, Boolean>> t, long seqNum) {
         for(int i =0; i<= (int) seqNum; i++) {
             if(!t.containsKey((long)i))
-                t.put((long)i, new Pair("", false));
+                t.put((long)i, Map.entry("", false));
         }
     }
 }
