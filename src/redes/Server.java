@@ -84,7 +84,7 @@ public class Server {
             aux = new byte[16];
             buf.get(aux, 0, 16);
 
-            LogMessage msg = new LogMessage(seqNum,  time, size, m);//, md5);
+            LogMessage msg = new LogMessage(seqNum,  time, size, m);
 
             if(!server.windows.containsKey(pack.getSocketAddress())) {
                 server.windows.put(pack.getSocketAddress(), new SlidingWindow(winSize));
@@ -118,7 +118,7 @@ public class Server {
             t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
             md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
-            Ack ack = new Ack(msg.getSeq_num(), msg.getTime());//, md5);
+            Ack ack = new Ack(msg.getSeq_num(), msg.getTime());
             double rdm = Math.random();
             if (rdm < server.perror) {
                 ack.setMd5(hash(md5));
