@@ -34,7 +34,6 @@ public class Client {
         this.addr = InetAddress .getByName(ip_port[0]);
         this.portNumber = Integer.parseInt(ip_port[1]);
         this.window = new SlidingWindow(Integer.parseInt(args[2]));
-        //this.tout = Integer.parseInt(args[3]);
         this.tout = Double.parseDouble(args[3]);
         this.perror = Double.parseDouble(args[4]);
         this.socket = new DatagramSocket();
@@ -103,7 +102,7 @@ public class Client {
             byte[] aux = new byte[16];
             buf.get(aux, 0, 16);
 
-            Ack ack = new Ack(seqNum, time);//, md5);
+            Ack ack = new Ack(seqNum, time);
 
             // Verificacao de erro
             if(checkMd5(aux, ack.getnMd5())) {

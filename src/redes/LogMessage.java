@@ -3,6 +3,7 @@ package redes;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Timer;
 
 public class LogMessage extends Message implements Serializable {
@@ -11,13 +12,12 @@ public class LogMessage extends Message implements Serializable {
     private Timestamp time;
     private short size;
     private String msg;
-    private String md5;
-    transient Timer timer; // transiente para poder serializar LogMessage
+    transient Timer timer; // transient para poder serializar LogMessage
     private boolean err;
     private byte[] nMd5;
 
-    public LogMessage(long seq_num, Timestamp time, short size, String msg/*, String md5*/) throws NoSuchAlgorithmException {
-        this.seq_num = seq_num; this.time = time; this.msg = msg; this.size = size;// this.md5 = md5;
+    public LogMessage(long seq_num, Timestamp time, short size, String msg) throws NoSuchAlgorithmException {
+        this.seq_num = seq_num; this.time = time; this.msg = msg; this.size = size;
         this.timer = new Timer(); this.err = false;
         this.nMd5 = generateHash();
     }
@@ -41,17 +41,14 @@ public class LogMessage extends Message implements Serializable {
     @Override
     public String toString() {
         return "seqNum: " +seq_num+ "\tTime: " +time+
-                "\tsize: " +size+ "\tmessage: " +msg+ "\tmd5: " +md5;
+                "\tsize: " +size+ "\tmessage: " +msg+ "\tmd5: " + Arrays.toString(nMd5);
     }
 
     static LogMessage setAndGetMessage(String nextLine, long seq_num, double perror, Timestamp time) throws NoSuchAlgorithmException {
-        String md5 = hash(String.valueOf(seq_num) + time.toString()
-                + String.valueOf((short)nextLine.length()) + nextLine);
         LogMessage msg = new LogMessage(seq_num, time, (short)nextLine.length(), nextLine);
         double rdm = Math.random();
         if(rdm < perror) {
-            msg.setMd5(hash(md5));
-            msg.nMd5[2] += 1;
+            msg.nMd5[2] += 1; // "Corrompe" o md5
             msg.setErr(true);
         }
         return msg;
@@ -70,10 +67,6 @@ public class LogMessage extends Message implements Serializable {
 
     public byte[] getnMd5() {
         return nMd5;
-    }
-
-    private void setMd5(String hash) {
-        this.md5 = hash;
     }
 
     private void setErr(boolean err) {

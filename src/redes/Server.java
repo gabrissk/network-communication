@@ -61,7 +61,6 @@ public class Server {
         Timestamp time;
         short size;
         String m;
-        String md5;
 
         System.out.println("Esperando por datagrama UDP na porta " + server.portNumber);
 
@@ -117,11 +116,9 @@ public class Server {
             System.out.println("Pacote " + msg.getSeq_num() + " recebido no servidor com mensagem "+msg.getMsg());
             t.put(msg.getSeq_num(), Map.entry(msg.getMsg(), false));
 
-            md5 = hash(String.valueOf(msg.getSeq_num() + msg.getTime().toString()));
             Ack ack = new Ack(msg.getSeq_num(), msg.getTime());
             double rdm = Math.random();
             if (rdm < server.perror) {
-                ack.setMd5(hash(md5));
                 ack.nMd5[2] +=1;
                 ack.setErr(true);
             }

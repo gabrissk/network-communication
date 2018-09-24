@@ -3,12 +3,12 @@ package redes;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 public class Ack extends Message implements Serializable {
 
     private long seq_num;
     private Timestamp time;
-    private String md5;
     private  boolean err;
     byte[] nMd5;
 
@@ -21,10 +21,6 @@ public class Ack extends Message implements Serializable {
     public long getSeq_num() { return seq_num; }
 
     public Timestamp getTime() { return time; }
-
-    public void setMd5(String hash) {
-        this.md5 = hash;
-    }
 
     public boolean isErr() {
         return err;
@@ -42,7 +38,7 @@ public class Ack extends Message implements Serializable {
     @Override
     public String toString() {
         return "seqNum: " +seq_num+ "\tTime: " +time.getSecs()+ ":" +time.getNanos()+
-                "\tmd5: " +md5;
+                "\tmd5: " + Arrays.toString(nMd5);
     }
 
     public void setErr(boolean err) {
